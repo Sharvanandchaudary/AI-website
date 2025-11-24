@@ -1,0 +1,248 @@
+/* Global Typography Improvements - Smaller, Better Fonts */
+
+/* Better font rendering */
+* {
+    letter-spacing: -0.01em !important;
+    font-feature-settings: 'kern' 1;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Base font size reduction */
+body {
+    font-size: 13px !important;
+    line-height: 1.5 !important;
+    font-weight: 400 !important;
+}
+
+/* Logo */
+.logo h2 {
+    font-size: 1.1rem !important;
+    letter-spacing: -0.02em !important;
+}
+
+/* Navigation */
+.nav-menu a {
+    font-size: 0.75rem !important;
+    font-weight: 500 !important;
+    letter-spacing: -0.005em !important;
+}
+
+.nav-login-btn-top {
+    font-size: 0.75rem !important;
+    padding: 0.5rem 1rem !important;
+}
+
+/* Hero section */
+.hero-title {
+    font-size: 1.6rem !important;
+    font-weight: 700 !important;
+    line-height: 1.2 !important;
+    letter-spacing: -0.025em !important;
+}
+
+.hero-subtitle {
+    font-size: 0.8rem !important;
+    font-weight: 400 !important;
+    line-height: 1.5 !important;
+}
+
+/* Buttons */
+.btn, .cta-btn, .secondary-btn, .btn-primary, .btn-secondary {
+    font-size: 0.75rem !important;
+    padding: 0.6rem 1.3rem !important;
+    font-weight: 500 !important;
+    letter-spacing: -0.005em !important;
+}
+
+/* Section titles */
+.section-title, .section-header h2 {
+    font-size: 1.4rem !important;
+    font-weight: 600 !important;
+    letter-spacing: -0.02em !important;
+    margin-bottom: 0.7rem !important;
+}
+
+.section-subtitle, .section-header p {
+    font-size: 0.8rem !important;
+    font-weight: 400 !important;
+    line-height: 1.5 !important;
+}
+
+/* Solution/Feature cards */
+.solution-card h3, .feature-card h3 {
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+    letter-spacing: -0.015em !important;
+    margin-bottom: 0.6rem !important;
+}
+
+.solution-card p, .feature-card p {
+    font-size: 0.75rem !important;
+    line-height: 1.5 !important;
+    font-weight: 400 !important;
+}
+
+.solution-card > p {
+    font-size: 0.72rem !important;
+}
+
+/* Feature lists */
+.feature-list li {
+    font-size: 0.7rem !important;
+    font-weight: 400 !important;
+}
+
+.card-link {
+    font-size: 0.7rem !important;
+    font-weight: 500 !important;
+    letter-spacing: -0.005em !important;
+}
+
+/* Stats */
+.stat-number, .stat-value {
+    font-size: 1.6rem !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.025em !important;
+}
+
+.stat-label {
+    font-size: 0.7rem !important;
+    font-weight: 400 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.03em !important;
+}
+
+/* Forms */
+.form-group label {
+    font-size: 0.75rem !important;
+    font-weight: 500 !important;
+}
+
+.form-group input, 
+.form-group textarea, 
+.form-group select {
+    font-size: 0.8rem !important;
+}
+
+/* Footer */
+.footer, .footer p {
+    font-size: 0.75rem !important;
+}
+
+/* Dashboard specific */
+.dashboard-header h1, .admin-header h1 {
+    font-size: 1.6rem !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.02em !important;
+}
+
+.dashboard-header p, .user-info p {
+    font-size: 0.8rem !important;
+}
+
+.project-title, .mini-project-title {
+    font-size: 0.95rem !important;
+    font-weight: 600 !important;
+    letter-spacing: -0.01em !important;
+}
+
+.project-description {
+    font-size: 0.75rem !important;
+    line-height: 1.5 !important;
+}
+
+.project-meta {
+    font-size: 0.7rem !important;
+}
+
+/* Table */
+.users-table th {
+    font-size: 0.7rem !important;
+    font-weight: 500 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.03em !important;
+}
+
+.users-table td {
+    font-size: 0.75rem !important;
+}
+
+/* Modal */
+.modal-title {
+    font-size: 1.3rem !important;
+    font-weight: 600 !important;
+    letter-spacing: -0.015em !important;
+}
+
+.detail-label, .field-label {
+    font-size: 0.7rem !important;
+    font-weight: 500 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.03em !important;
+}
+
+.detail-value, .field-value {
+    font-size: 0.85rem !important;
+    font-weight: 500 !important;
+}
+
+/* Auth page */
+.auth-title {
+    font-size: 1.5rem !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.02em !important;
+}
+
+.auth-subtitle {
+    font-size: 0.8rem !important;
+}
+
+.auth-btn, .submit-btn {
+    font-size: 0.8rem !important;
+    font-weight: 500 !important;
+    padding: 0.7rem 1.5rem !important;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+    body {
+        font-size: 12px !important;
+    }
+    
+    .hero-title {
+        font-size: 1.3rem !important;
+    }
+    
+    .hero-subtitle {
+        font-size: 0.75rem !important;
+    }
+    
+    .section-title, .section-header h2 {
+        font-size: 1.2rem !important;
+    }
+    
+    .solution-card h3, .feature-card h3 {
+        font-size: 0.9rem !important;
+    }
+    
+    .btn, .cta-btn {
+        font-size: 0.7rem !important;
+        padding: 0.55rem 1.1rem !important;
+    }
+}
+
+@media (max-width: 480px) {
+    body {
+        font-size: 11px !important;
+    }
+    
+    .hero-title {
+        font-size: 1.15rem !important;
+    }
+    
+    .section-title {
+        font-size: 1rem !important;
+    }
+}

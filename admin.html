@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - XGENAI</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="typography.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .admin-container {
+            max-width: 1400px;
+            margin: 100px auto 50px;
+            padding: 0 20px;
+        }
+
+        .admin-header {
+            margin-bottom: 3rem;
+            text-align: center;
+        }
+
+        .admin-header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .stat-card {
+            background: var(--light-bg);
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stat-card h3 {
+            font-size: 2rem;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card p {
+            color: var(--text-secondary);
+        }
+
+        .section-title {
+            font-size: 1.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .users-table, .emails-table {
+            background: var(--light-bg);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 3rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        th {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        td {
+            color: var(--text-secondary);
+        }
+
+        tr:hover {
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .email-content {
+            max-width: 300px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 0.85rem;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-secondary);
+        }
+
+        .btn-clear {
+            background: #ef4444;
+            color: white;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-clear:hover {
+            background: #dc2626;
+            transform: translateY(-2px);
+        }
+
+        .actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="logo">
+                <a href="index.html"><h2>XGEN<span>AI</span></h2></a>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="index.html#home">Home</a></li>
+                <li><a href="auth.html">Login / Sign Up</a></li>
+                <li><a href="admin.html" style="color: var(--primary-color);">Admin</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1>Admin Dashboard</h1>
+            <p style="color: var(--text-secondary);">Manage registered users and view email confirmations</p>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3 id="totalUsers">0</h3>
+                <p>Total Users</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="totalEmails">0</h3>
+                <p>Emails Sent</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="todayUsers">0</h3>
+                <p>Users Today</p>
+            </div>
+        </div>
+
+        <!-- Users Table -->
+        <div class="users-table">
+            <h2 class="section-title">Registered Users</h2>
+            <table id="usersTable">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Address</th>
+                        <th>Created At</th>
+                        <th>Last Login</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTableBody">
+                    <tr>
+                        <td colspan="7" class="no-data">No users registered yet</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Emails Table -->
+        <div class="emails-table">
+            <h2 class="section-title">Confirmation Emails</h2>
+            <table id="emailsTable">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>To</th>
+                        <th>Subject</th>
+                        <th>Sent At</th>
+                        <th>User Name</th>
+                        <th>Content Preview</th>
+                    </tr>
+                </thead>
+                <tbody id="emailsTableBody">
+                    <tr>
+                        <td colspan="6" class="no-data">No emails sent yet</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Actions -->
+        <div class="actions">
+            <button class="btn-clear" onclick="clearAllData()">Clear All Data</button>
+        </div>
+    </div>
+
+    <script>
+        function loadDashboard() {
+            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            const emails = JSON.parse(localStorage.getItem('emails') || '[]');
+
+            // Update stats
+            document.getElementById('totalUsers').textContent = users.length;
+            document.getElementById('totalEmails').textContent = emails.length;
+
+            // Calculate today's users
+            const today = new Date().toDateString();
+            const todayUsers = users.filter(user => 
+                new Date(user.createdAt).toDateString() === today
+            ).length;
+            document.getElementById('todayUsers').textContent = todayUsers;
+
+            // Load users table
+            const usersTableBody = document.getElementById('usersTableBody');
+            if (users.length === 0) {
+                usersTableBody.innerHTML = '<tr><td colspan="6" class="no-data">No users registered yet</td></tr>';
+            } else {
+                usersTableBody.innerHTML = users.map((user, index) => `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${user.name}</td>
+                        <td>${user.email}</td>
+                        <td>${user.phone}</td>
+                        <td>${user.address}</td>
+                        <td>${new Date(user.createdAt).toLocaleString()}</td>
+                    </tr>
+                `).join('');
+            }
+
+            // Load emails table
+            const emailsTableBody = document.getElementById('emailsTableBody');
+            if (emails.length === 0) {
+                emailsTableBody.innerHTML = '<tr><td colspan="5" class="no-data">No emails sent yet</td></tr>';
+            } else {
+                emailsTableBody.innerHTML = emails.map((email, index) => `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${email.to}</td>
+                        <td>${email.subject}</td>
+                        <td>${new Date(email.sentAt).toLocaleString()}</td>
+                        <td><div class="email-content">${email.body.substring(0, 100)}...</div></td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        function clearAllData() {
+            if (confirm('Are you sure you want to clear all data? This cannot be undone.')) {
+                localStorage.removeItem('users');
+                localStorage.removeItem('emails');
+                localStorage.removeItem('currentUser');
+                loadDashboard();
+                alert('All data cleared successfully!');
+            }
+        }
+
+        // Load dashboard on page load
+        loadDashboard();
+
+        // Refresh every 5 seconds
+        setInterval(loadDashboard, 5000);
+    </script>
+    <!-- Use admin-backend.js for database connection -->
+    <script src="admin-backend.js"></script>
+</body>
+</html>

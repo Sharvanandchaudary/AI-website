@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login / Sign Up - XGENAI</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="auth.css">
+    <link rel="stylesheet" href="typography.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="logo">
+                <a href="index.html"><h2>XGEN<span>AI</span></h2></a>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="index.html#home">Home</a></li>
+                <li><a href="index.html#solutions">Solutions</a></li>
+                <li><a href="index.html#about">About</a></li>
+                <li><a href="index.html#contact">Contact</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Auth Section -->
+    <section class="auth-section">
+        <div class="auth-container">
+            <!-- Login Form -->
+            <div class="auth-card" id="loginCard">
+                <div class="auth-header">
+                    <h2>Welcome Back</h2>
+                    <p>Login to your account</p>
+                </div>
+                <form id="loginForm" class="auth-form">
+                    <div class="form-group">
+                        <label for="loginEmail">Email</label>
+                        <input type="email" id="loginEmail" name="email" placeholder="Enter your email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="loginPassword">Password</label>
+                        <input type="password" id="loginPassword" name="password" placeholder="Enter your password" required>
+                    </div>
+                    <div class="form-options">
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="remember">
+                            <span>Remember me</span>
+                        </label>
+                        <a href="#" class="forgot-link">Forgot Password?</a>
+                    </div>
+                    <button type="submit" class="btn btn-primary auth-btn">Login</button>
+                    <div class="auth-switch">
+                        <p>Don't have an account? <a href="#" id="showSignup">Sign Up</a></p>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Signup Form -->
+            <div class="auth-card" id="signupCard" style="display: none;">
+                <div class="auth-header">
+                    <h2>Create Account</h2>
+                    <p>Sign up to get started</p>
+                </div>
+                <form id="signupForm" class="auth-form">
+                    <div class="form-group">
+                        <label for="signupName">Full Name</label>
+                        <input type="text" id="signupName" name="name" placeholder="Enter your full name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="signupEmail">Email</label>
+                        <input type="email" id="signupEmail" name="email" placeholder="Enter your email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="signupPhone">Phone Number</label>
+                        <input type="tel" id="signupPhone" name="phone" placeholder="+1 (555) 000-0000" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="signupAddress">Address</label>
+                        <textarea id="signupAddress" name="address" placeholder="Enter your address" rows="3" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="signupPassword">Password</label>
+                        <input type="password" id="signupPassword" name="password" placeholder="Create a password" required minlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label for="signupConfirmPassword">Confirm Password</label>
+                        <input type="password" id="signupConfirmPassword" name="confirmPassword" placeholder="Confirm your password" required minlength="6">
+                    </div>
+                    <div class="form-options">
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="terms" required>
+                            <span>I agree to the <a href="#">Terms & Conditions</a></span>
+                        </label>
+                    </div>
+                    <button type="submit" class="btn btn-primary auth-btn">Create Account</button>
+                    <div class="auth-switch">
+                        <p>Already have an account? <a href="#" id="showLogin">Login</a></p>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Success Message -->
+            <div class="auth-card success-card" id="successCard" style="display: none;">
+                <div class="success-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M8 12l2 2 4-4"></path>
+                    </svg>
+                </div>
+                <h2>Account Created Successfully!</h2>
+                <p>A confirmation email has been sent to <strong id="userEmail"></strong></p>
+                <p class="success-message">Please check your inbox to verify your account.</p>
+                <button class="btn btn-primary auth-btn" id="goToLogin">Go to Login</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+        <span id="toastMessage"></span>
+    </div>
+
+    <!-- Use auth-backend.js for database connection, or auth.js for localStorage -->
+    <script src="auth-backend.js"></script>
+</body>
+</html>

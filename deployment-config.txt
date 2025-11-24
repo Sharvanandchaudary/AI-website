@@ -1,0 +1,35 @@
+# XGENAI Production Configuration
+# Fill in these values as you complete deployment
+
+## GitHub
+GITHUB_REPO_URL=https://github.com/YOUR_USERNAME/xgenai-platform
+
+## Mailgun (Setup First)
+MAILGUN_API_KEY=
+MAILGUN_DOMAIN=
+MAILGUN_FROM_EMAIL=
+
+## Render Backend
+RENDER_SERVICE_NAME=xgenai-backend
+RENDER_SERVICE_URL=
+RENDER_POSTGRES_URL=
+
+## Netlify Frontend
+NETLIFY_SITE_NAME=
+NETLIFY_SITE_URL=
+
+## Deployment Status
+[] GitHub repo created
+[] Mailgun account setup
+[] Render PostgreSQL database created
+[] Render Web Service deployed
+[] Netlify site deployed
+[] Frontend API URLs updated
+[] Render CORS updated
+[] Test: Account creation works
+[] Test: Email received
+[] Test: Dashboard accessible
+[] Test: Projects save correctly
+[] Test: Admin panel works
+
+## Go Live Date: _______________
