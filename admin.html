@@ -207,60 +207,172 @@
             </table>
         </div>
 
-        <!-- Actions -->
-        <div class="actions">
-            <button class="btn-clear" onclick="clearAllData()">Clear All Data</button>
+        <!-- Job Applications Section -->
+        <div id="jobApplicationsSection" style="margin-top: 3rem;">
+            <h2 class="section-title">Job Applications</h2>
+            <p class="no-data">Loading applications...</p>
         </div>
     </div>
 
     <script>
-        function loadDashboard() {
-            const users = JSON.parse(localStorage.getItem('users') || '[]');
-            const emails = JSON.parse(localStorage.getItem('emails') || '[]');
+        // API URL configuration
+        const API_URL = window.location.hostname === 'localhost' ? 'http://localhost:5000' : 'https://your-backend-url.com';
+        
+        async function loadDashboard() {
+            try {
+                // Fetch statistics
+                const statsResponse = await fetch(`${API_URL}/api/stats`);
+                if (statsResponse.ok) {
+                    const stats = await statsResponse.json();
+                    document.getElementById('totalUsers').textContent = stats.total_users || 0;
+                    document.getElementById('totalEmails').textContent = stats.total_emails || 0;
+                    document.getElementById('todayUsers').textContent = stats.today_users || 0;
+                }
 
-            // Update stats
-            document.getElementById('totalUsers').textContent = users.length;
-            document.getElementById('totalEmails').textContent = emails.length;
+                // Fetch users
+                const usersResponse = await fetch(`${API_URL}/api/users`);
+                if (usersResponse.ok) {
+                    const usersData = await usersResponse.json();
+                    const users = usersData.users || [];
+                    
+                    const usersTableBody = document.getElementById('usersTableBody');
+                    if (users.length === 0) {
+                        usersTableBody.innerHTML = '<tr><td colspan="7" class="no-data">No users registered yet</td></tr>';
+                    } else {
+                        usersTableBody.innerHTML = users.map((user, index) => `
+                            <tr>
+                                <td>${index + 1}</td>
+                                <td>${user.name}</td>
+                                <td>${user.email}</td>
+                                <td>${user.phone}</td>
+                                <td>${user.address}</td>
+                                <td>${new Date(user.created_at).toLocaleString()}</td>
+                                <td>${user.last_login ? new Date(user.last_login).toLocaleString() : 'Never'}</td>
+                            </tr>
+                        `).join('');
+                    }
+                }
 
-            // Calculate today's users
-            const today = new Date().toDateString();
-            const todayUsers = users.filter(user => 
-                new Date(user.createdAt).toDateString() === today
-            ).length;
-            document.getElementById('todayUsers').textContent = todayUsers;
+                // Fetch emails
+                const emailsResponse = await fetch(`${API_URL}/api/emails`);
+                if (emailsResponse.ok) {
+                    const emailsData = await emailsResponse.json();
+                    const emails = emailsData.emails || [];
+                    
+                    const emailsTableBody = document.getElementById('emailsTableBody');
+                    if (emails.length === 0) {
+                        emailsTableBody.innerHTML = '<tr><td colspan="6" class="no-data">No emails sent yet</td></tr>';
+                    } else {
+                        emailsTableBody.innerHTML = emails.map((email, index) => `
+                            <tr>
+                                <td>${index + 1}</td>
+                                <td>${email.to_email}</td>
+                                <td>${email.subject}</td>
+                                <td>${new Date(email.sent_at).toLocaleString()}</td>
+                                <td>${email.user_name || 'N/A'}</td>
+                                <td><div class="email-content">${email.body.substring(0, 100)}...</div></td>
+                            </tr>
+                        `).join('');
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+            }
+        }
 
-            // Load users table
-            const usersTableBody = document.getElementById('usersTableBody');
-            if (users.length === 0) {
-                usersTableBody.innerHTML = '<tr><td colspan="6" class="no-data">No users registered yet</td></tr>';
-            } else {
-                usersTableBody.innerHTML = users.map((user, index) => `
-                    <tr>
-                        <td>${index + 1}</td>
-                        <td>${user.name}</td>
-                        <td>${user.email}</td>
-                        <td>${user.phone}</td>
-                        <td>${user.address}</td>
-                        <td>${new Date(user.createdAt).toLocaleString()}</td>
-                    </tr>
-                `).join('');
+        // Load job applications
+        async function loadJobApplications() {
+            const applicationsSection = document.getElementById('jobApplicationsSection');
+            try {
+                const response = await fetch(`${API_URL}/api/admin/applications`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.applications) {
+                    displayJobApplications(data.applications);
+                } else {
+                    applicationsSection.innerHTML = '<p class="no-data">No applications found</p>';
+                }
+            } catch (error) {
+                console.error('Error loading applications:', error);
+                applicationsSection.innerHTML = `<p class="no-data">Error loading applications: ${error.message}<br>Make sure the backend server is running on ${API_URL}</p>`;
+            }
+        }
+
+        function displayJobApplications(applications) {
+            const applicationsSection = document.getElementById('jobApplicationsSection');
+            
+            if (applications.length === 0) {
+                applicationsSection.innerHTML = '<p class="no-data">No job applications yet</p>';
+                return;
             }
 
-            // Load emails table
-            const emailsTableBody = document.getElementById('emailsTableBody');
-            if (emails.length === 0) {
-                emailsTableBody.innerHTML = '<tr><td colspan="5" class="no-data">No emails sent yet</td></tr>';
-            } else {
-                emailsTableBody.innerHTML = emails.map((email, index) => `
-                    <tr>
-                        <td>${index + 1}</td>
-                        <td>${email.to}</td>
-                        <td>${email.subject}</td>
-                        <td>${new Date(email.sentAt).toLocaleString()}</td>
-                        <td><div class="email-content">${email.body.substring(0, 100)}...</div></td>
-                    </tr>
-                `).join('');
+            // Group applications by position
+            const grouped = {};
+            applications.forEach(app => {
+                if (!grouped[app.position]) {
+                    grouped[app.position] = [];
+                }
+                grouped[app.position].push(app);
+            });
+
+            // Display grouped applications
+            let html = '';
+            for (const [position, apps] of Object.entries(grouped)) {
+                html += `
+                    <div class="users-table" style="margin-bottom: 2rem;">
+                        <h3 style="margin-bottom: 1rem;">${position} (${apps.length} applicants)</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
+                                    <th>College</th>
+                                    <th>Year</th>
+                                    <th>Status</th>
+                                    <th>Applied</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${apps.map((app, index) => `
+                                    <tr id="app-row-${app.id}">
+                                        <td>${index + 1}</td>
+                                        <td>${app.fullName}</td>
+                                        <td>${app.email}</td>
+                                        <td>${app.phone}</td>
+                                        <td>${app.college}</td>
+                                        <td>${app.year}</td>
+                                        <td>
+                                            <select id="status-${app.id}" onchange="updateApplicationStatus(${app.id}, this.value)" style="padding: 0.4rem 0.6rem; border-radius: 6px; background: rgba(99, 102, 241, 0.2); color: #6366f1; border: 1px solid #6366f1; cursor: pointer;">
+                                                <option value="pending" ${app.status === 'pending' ? 'selected' : ''}>Pending</option>
+                                                <option value="application_received" ${app.status === 'application_received' ? 'selected' : ''}>Application Received</option>
+                                                <option value="under_review" ${app.status === 'under_review' ? 'selected' : ''}>Under Review</option>
+                                                <option value="interview" ${app.status === 'interview' ? 'selected' : ''}>Interview</option>
+                                                <option value="selected" ${app.status === 'selected' ? 'selected' : ''}>Selected</option>
+                                                <option value="rejected" ${app.status === 'rejected' ? 'selected' : ''}>Rejected</option>
+                                            </select>
+                                        </td>
+                                        <td>${new Date(app.appliedAt).toLocaleDateString()}</td>
+                                        <td>
+                                            <button onclick="sendStatusEmail(${app.id}, '${app.email}', '${app.fullName}', '${app.position}', document.getElementById('status-${app.id}').value)" style="padding: 0.4rem 0.8rem; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">
+                                                Send Email
+                                            </button>
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
             }
+            applicationsSection.innerHTML = html;
         }
 
         function clearAllData() {
@@ -273,13 +385,108 @@
             }
         }
 
+        // Update application status
+        async function updateApplicationStatus(appId, newStatus) {
+            try {
+                const response = await fetch(`${API_URL}/api/admin/applications/${appId}/status`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ status: newStatus })
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    console.log('Status updated successfully');
+                    // Reload applications to reflect changes
+                    loadJobApplications();
+                } else {
+                    alert('Error updating status: ' + (result.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error updating status:', error);
+                alert('Failed to update status. Make sure backend is running.');
+            }
+        }
+
+        // Send status email to candidate
+        async function sendStatusEmail(appId, email, name, position, status) {
+            const statusMessages = {
+                'pending': {
+                    subject: 'Application Received',
+                    body: `Dear ${name},\n\nThank you for applying to the ${position} position at XGENAI.\n\nYour application is currently pending review. We will get back to you soon.\n\nBest regards,\nXGENAI Recruitment Team`
+                },
+                'application_received': {
+                    subject: 'Application Received - ' + position,
+                    body: `Dear ${name},\n\nWe have received your application for the ${position} position at XGENAI.\n\nOur team will review your application and contact you within 5-7 business days.\n\nBest regards,\nXGENAI Recruitment Team`
+                },
+                'under_review': {
+                    subject: 'Application Under Review - ' + position,
+                    body: `Dear ${name},\n\nYour application for the ${position} position is currently under review by our recruitment team.\n\nWe appreciate your patience and will update you on the next steps soon.\n\nBest regards,\nXGENAI Recruitment Team`
+                },
+                'interview': {
+                    subject: 'Interview Invitation - ' + position,
+                    body: `Dear ${name},\n\nCongratulations! We are impressed with your application for the ${position} position.\n\nWe would like to invite you for an interview. Our team will contact you shortly to schedule a convenient time.\n\nPlease prepare to discuss your experience and interest in this role.\n\nBest regards,\nXGENAI Recruitment Team`
+                },
+                'selected': {
+                    subject: 'Congratulations! You have been selected - ' + position,
+                    body: `Dear ${name},\n\nWe are delighted to inform you that you have been selected for the ${position} position at XGENAI!\n\nCongratulations on your successful application. Our team will contact you shortly with the next steps and onboarding details.\n\nWe look forward to having you on our team!\n\nBest regards,\nXGENAI Recruitment Team`
+                },
+                'rejected': {
+                    subject: 'Application Status Update - ' + position,
+                    body: `Dear ${name},\n\nThank you for your interest in the ${position} position at XGENAI and for taking the time to apply.\n\nAfter careful consideration, we regret to inform you that we will not be moving forward with your application at this time.\n\nWe appreciate your interest in XGENAI and encourage you to apply for future opportunities that match your skills and experience.\n\nBest regards,\nXGENAI Recruitment Team`
+                }
+            };
+
+            const emailData = statusMessages[status];
+            
+            if (!emailData) {
+                alert('Invalid status selected');
+                return;
+            }
+
+            if (!confirm(`Send ${status.replace('_', ' ')} email to ${name}?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/api/admin/send-application-email`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        applicationId: appId,
+                        email: email,
+                        subject: emailData.subject,
+                        body: emailData.body
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    alert('Email sent successfully!');
+                } else {
+                    alert('Error sending email: ' + (result.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error sending email:', error);
+                alert('Failed to send email. Make sure backend is running.');
+            }
+        }
+
         // Load dashboard on page load
         loadDashboard();
+        loadJobApplications();
 
         // Refresh every 5 seconds
-        setInterval(loadDashboard, 5000);
+        setInterval(() => {
+            loadDashboard();
+            loadJobApplications();
+        }, 5000);
     </script>
-    <!-- Use admin-backend.js for database connection -->
-    <script src="admin-backend.js"></script>
 </body>
 </html>

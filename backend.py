@@ -187,6 +187,50 @@ def init_db():
             )
         ''')
     
+    # Applications table for job applications
+    if USE_POSTGRES:
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS applications (
+                id SERIAL PRIMARY KEY,
+                position VARCHAR(255) NOT NULL,
+                full_name VARCHAR(255) NOT NULL,
+                email VARCHAR(255) NOT NULL,
+                phone VARCHAR(50) NOT NULL,
+                address TEXT NOT NULL,
+                college VARCHAR(255) NOT NULL,
+                degree VARCHAR(255) NOT NULL,
+                semester VARCHAR(50) NOT NULL,
+                year VARCHAR(50) NOT NULL,
+                about TEXT NOT NULL,
+                resume_name VARCHAR(255) NOT NULL,
+                linkedin VARCHAR(500),
+                github VARCHAR(500),
+                status VARCHAR(50) DEFAULT 'pending',
+                applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+    else:
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS applications (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                position TEXT NOT NULL,
+                full_name TEXT NOT NULL,
+                email TEXT NOT NULL,
+                phone TEXT NOT NULL,
+                address TEXT NOT NULL,
+                college TEXT NOT NULL,
+                degree TEXT NOT NULL,
+                semester TEXT NOT NULL,
+                year TEXT NOT NULL,
+                about TEXT NOT NULL,
+                resume_name TEXT NOT NULL,
+                linkedin TEXT,
+                github TEXT,
+                status TEXT DEFAULT 'pending',
+                applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+    
     conn.commit()
     conn.close()
     print("✅ Database initialized successfully!")
@@ -720,6 +764,219 @@ def get_all_admin_data():
         
     except Exception as e:
         print(f"❌ Error fetching admin data: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+# Job Applications Endpoints
+
+@app.route('/api/applications', methods=['POST'])
+def submit_application():
+    """Submit job application"""
+    try:
+        data = request.json
+        
+        # Validate required fields
+        required_fields = ['position', 'fullName', 'email', 'phone', 'address', 
+                          'college', 'degree', 'semester', 'year', 'about', 'resumeName']
+        
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({'error': f'Missing required field: {field}'}), 400
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Insert application
+        if USE_POSTGRES:
+            cursor.execute('''
+                INSERT INTO applications 
+                (position, full_name, email, phone, address, college, degree, 
+                 semester, year, about, resume_name, linkedin, github, applied_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                RETURNING id
+            ''', (
+                data['position'], data['fullName'], data['email'], data['phone'],
+                data['address'], data['college'], data['degree'], data['semester'],
+                data['year'], data['about'], data['resumeName'],
+                data.get('linkedin', ''), data.get('github', ''),
+                datetime.now()
+            ))
+            application_id = cursor.fetchone()[0]
+        else:
+            cursor.execute('''
+                INSERT INTO applications 
+                (position, full_name, email, phone, address, college, degree, 
+                 semester, year, about, resume_name, linkedin, github, applied_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                data['position'], data['fullName'], data['email'], data['phone'],
+                data['address'], data['college'], data['degree'], data['semester'],
+                data['year'], data['about'], data['resumeName'],
+                data.get('linkedin', ''), data.get('github', ''),
+                datetime.now()
+            ))
+            application_id = cursor.lastrowid
+        
+        conn.commit()
+        
+        # Send confirmation email
+        email_body = f"""
+Hi {data['fullName']},
+
+Thank you for applying to XGENAI!
+
+We have received your application for the {data['position']} position.
+
+Application Details:
+- Position: {data['position']}
+- College: {data['college']}
+- Semester: {data['semester']}
+- Expected Graduation: {data['year']}
+
+Our team will review your application and get back to you within 5-7 business days.
+
+Best regards,
+XGENAI Recruitment Team
+        """
+        
+        send_email_mailgun(data['email'], f"Application Received - {data['position']}", email_body)
+        
+        # Store email record
+        if USE_POSTGRES:
+            cursor.execute('''
+                INSERT INTO emails (to_email, subject, body, sent_at)
+                VALUES (%s, %s, %s, %s)
+            ''', (data['email'], f"Application Received - {data['position']}", email_body, datetime.now()))
+        else:
+            cursor.execute('''
+                INSERT INTO emails (to_email, subject, body, sent_at)
+                VALUES (?, ?, ?, ?)
+            ''', (data['email'], f"Application Received - {data['position']}", email_body, datetime.now()))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'message': 'Application submitted successfully',
+            'application_id': application_id
+        }), 201
+        
+    except Exception as e:
+        print(f"❌ Error submitting application: {e}")
+        return jsonify({'error': 'Failed to submit application'}), 500
+
+@app.route('/api/admin/applications', methods=['GET'])
+def get_all_applications():
+    """Get all job applications (admin only)"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            SELECT id, position, full_name, email, phone, college, semester, 
+                   year, status, applied_at, linkedin, github
+            FROM applications
+            ORDER BY applied_at DESC
+        ''')
+        
+        applications = []
+        for row in cursor.fetchall():
+            applications.append({
+                'id': row[0],
+                'position': row[1],
+                'fullName': row[2],
+                'email': row[3],
+                'phone': row[4],
+                'college': row[5],
+                'semester': row[6],
+                'year': row[7],
+                'status': row[8],
+                'appliedAt': row[9],
+                'linkedin': row[10],
+                'github': row[11]
+            })
+        
+        conn.close()
+        return jsonify({'applications': applications}), 200
+        
+    except Exception as e:
+        print(f"❌ Error fetching applications: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+@app.route('/api/admin/applications/<int:app_id>/status', methods=['PUT'])
+def update_application_status(app_id):
+    """Update application status (admin only)"""
+    try:
+        data = request.json
+        new_status = data.get('status')
+        
+        if not new_status:
+            return jsonify({'error': 'Status is required'}), 400
+        
+        valid_statuses = ['pending', 'application_received', 'under_review', 'interview', 'selected', 'rejected']
+        if new_status not in valid_statuses:
+            return jsonify({'error': 'Invalid status'}), 400
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        if USE_POSTGRES:
+            cursor.execute('''
+                UPDATE applications 
+                SET status = %s 
+                WHERE id = %s
+            ''', (new_status, app_id))
+        else:
+            cursor.execute('''
+                UPDATE applications 
+                SET status = ? 
+                WHERE id = ?
+            ''', (new_status, app_id))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({'message': 'Status updated successfully', 'status': new_status}), 200
+        
+    except Exception as e:
+        print(f"❌ Error updating application status: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+@app.route('/api/admin/send-application-email', methods=['POST'])
+def send_application_email():
+    """Send email to candidate about application status (admin only)"""
+    try:
+        data = request.json
+        
+        required_fields = ['applicationId', 'email', 'subject', 'body']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({'error': f'Missing required field: {field}'}), 400
+        
+        # Send email
+        send_email_mailgun(data['email'], data['subject'], data['body'])
+        
+        # Store email record
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        if USE_POSTGRES:
+            cursor.execute('''
+                INSERT INTO emails (to_email, subject, body, sent_at)
+                VALUES (%s, %s, %s, %s)
+            ''', (data['email'], data['subject'], data['body'], datetime.now()))
+        else:
+            cursor.execute('''
+                INSERT INTO emails (to_email, subject, body, sent_at)
+                VALUES (?, ?, ?, ?)
+            ''', (data['email'], data['subject'], data['body'], datetime.now()))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({'message': 'Email sent successfully'}), 200
+        
+    except Exception as e:
+        print(f"❌ Error sending application email: {e}")
         return jsonify({'error': 'Internal server error'}), 500
 
 if __name__ == '__main__':

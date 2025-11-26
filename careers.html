@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Careers - Join XGENAI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="typography.css">
+    <link rel="stylesheet" href="careers.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="index.html" class="logo">
+                <h2>XGENAI</h2>
+            </a>
+            <div class="nav-menu">
+                <a href="index.html">Home</a>
+                <a href="careers.html" class="active">Careers</a>
+                <a href="#about">About</a>
+                <a href="#contact">Contact</a>
+            </div>
+            <a href="auth.html" class="nav-login-btn-top">Login/Signup</a>
+        </div>
+    </nav>
+
+    <div class="careers-hero">
+        <div class="container">
+            <h1>Join Our Team</h1>
+            <p>Shape the future of AI, ML, and MedTech with XGENAI</p>
+        </div>
+    </div>
+
+    <div class="careers-container">
+        <div class="container">
+            <!-- Internship Opportunities Section -->
+            <div class="section-header">
+                <h2>Internship Opportunities</h2>
+                <p>We're looking for passionate students to join our growing team</p>
+            </div>
+
+            <!-- Job Listings Grid -->
+            <div class="jobs-grid">
+                <!-- AI Intern -->
+                <div class="job-card">
+                    <div class="job-badge">Internship</div>
+                    <h3 class="job-title">AI Intern</h3>
+                    <div class="job-meta">
+                        <span><i class="fas fa-map-marker-alt"></i> Remote</span>
+                        <span><i class="fas fa-clock"></i> 3-6 months</span>
+                        <span><i class="fas fa-briefcase"></i> Full-time/Part-time</span>
+                    </div>
+                    <p class="job-description">
+                        Work on cutting-edge AI projects including natural language processing, computer vision, 
+                        and generative AI applications. Learn from experienced AI researchers and engineers.
+                    </p>
+                    <ul class="job-requirements">
+                        <li>Pursuing Bachelor's/Master's in CS, AI, or related field</li>
+                        <li>Strong programming skills in Python</li>
+                        <li>Knowledge of machine learning frameworks (TensorFlow, PyTorch)</li>
+                        <li>Understanding of AI algorithms and neural networks</li>
+                        <li>Good problem-solving and analytical skills</li>
+                    </ul>
+                    <button onclick="redirectToApplication('job1')" class="apply-now-btn">Apply Now</button>
+                </div>
+
+                <!-- ML Intern -->
+                <div class="job-card">
+                    <div class="job-badge">Internship</div>
+                    <h3 class="job-title">Machine Learning Intern</h3>
+                    <div class="job-meta">
+                        <span><i class="fas fa-map-marker-alt"></i> Remote</span>
+                        <span><i class="fas fa-clock"></i> 3-6 months</span>
+                        <span><i class="fas fa-briefcase"></i> Full-time/Part-time</span>
+                    </div>
+                    <p class="job-description">
+                        Build and deploy ML models for real-world applications. Work on data preprocessing, 
+                        model training, optimization, and deployment in production environments.
+                    </p>
+                    <ul class="job-requirements">
+                        <li>Pursuing Bachelor's/Master's in CS, Data Science, or related field</li>
+                        <li>Experience with ML algorithms and statistical modeling</li>
+                        <li>Proficiency in Python, scikit-learn, pandas</li>
+                        <li>Understanding of model evaluation and optimization</li>
+                        <li>Strong mathematical and analytical skills</li>
+                    </ul>
+                    <button onclick="redirectToApplication('job2')" class="apply-now-btn">Apply Now</button>
+                </div>
+
+                <!-- MedTech Intern -->
+                <div class="job-card">
+                    <div class="job-badge">Internship</div>
+                    <h3 class="job-title">MedTech Intern</h3>
+                    <div class="job-meta">
+                        <span><i class="fas fa-map-marker-alt"></i> Remote</span>
+                        <span><i class="fas fa-clock"></i> 3-6 months</span>
+                        <span><i class="fas fa-briefcase"></i> Full-time/Part-time</span>
+                    </div>
+                    <p class="job-description">
+                        Work at the intersection of healthcare and technology. Develop AI-powered medical imaging, 
+                        patient data analytics, and healthcare IoT solutions that improve patient outcomes.
+                    </p>
+                    <ul class="job-requirements">
+                        <li>Pursuing Bachelor's/Master's in Biomedical Engineering, CS, or related field</li>
+                        <li>Interest in healthcare technology and medical applications</li>
+                        <li>Basic knowledge of medical imaging or healthcare data</li>
+                        <li>Programming skills in Python or similar languages</li>
+                        <li>Understanding of healthcare compliance (HIPAA) is a plus</li>
+                    </ul>
+                    <button onclick="redirectToApplication('job3')" class="apply-now-btn">Apply Now</button>
+                </div>
+
+                <!-- Software Developer Intern -->
+                <div class="job-card">
+                    <div class="job-badge">Internship</div>
+                    <h3 class="job-title">Software Developer Intern</h3>
+                    <div class="job-meta">
+                        <span><i class="fas fa-map-marker-alt"></i> Remote</span>
+                        <span><i class="fas fa-clock"></i> 3-6 months</span>
+                        <span><i class="fas fa-briefcase"></i> Full-time/Part-time</span>
+                    </div>
+                    <p class="job-description">
+                        Develop web and mobile applications using modern technologies. Work on full-stack development, 
+                        API design, database management, and cloud deployment.
+                    </p>
+                    <ul class="job-requirements">
+                        <li>Pursuing Bachelor's/Master's in CS, Software Engineering, or related field</li>
+                        <li>Proficiency in at least one programming language (Python, JavaScript, Java)</li>
+                        <li>Experience with web frameworks (React, Flask, Node.js)</li>
+                        <li>Understanding of databases (SQL/NoSQL)</li>
+                        <li>Familiarity with Git and version control</li>
+                    </ul>
+                    <button onclick="redirectToApplication('job4')" class="apply-now-btn">Apply Now</button>
+                </div>
+
+                <!-- Data Intern -->
+                <div class="job-card">
+                    <div class="job-badge">Internship</div>
+                    <h3 class="job-title">Data Analyst Intern</h3>
+                    <div class="job-meta">
+                        <span><i class="fas fa-map-marker-alt"></i> Remote</span>
+                        <span><i class="fas fa-clock"></i> 3-6 months</span>
+                        <span><i class="fas fa-briefcase"></i> Full-time/Part-time</span>
+                    </div>
+                    <p class="job-description">
+                        Analyze large datasets to extract insights and drive business decisions. Create dashboards, 
+                        reports, and visualizations to communicate findings effectively.
+                    </p>
+                    <ul class="job-requirements">
+                        <li>Pursuing Bachelor's/Master's in Data Science, Statistics, CS, or related field</li>
+                        <li>Strong analytical and problem-solving skills</li>
+                        <li>Proficiency in SQL and data manipulation tools</li>
+                        <li>Experience with Python/R for data analysis</li>
+                        <li>Knowledge of data visualization tools (Tableau, Power BI, matplotlib)</li>
+                    </ul>
+                    <button onclick="redirectToApplication('job5')" class="apply-now-btn">Apply Now</button>
+                </div>
+
+                <!-- ML Data Intern -->
+                <div class="job-card">
+                    <div class="job-badge">Internship</div>
+                    <h3 class="job-title">ML Data Engineer Intern</h3>
+                    <div class="job-meta">
+                        <span><i class="fas fa-map-marker-alt"></i> Remote</span>
+                        <span><i class="fas fa-clock"></i> 3-6 months</span>
+                        <span><i class="fas fa-briefcase"></i> Full-time/Part-time</span>
+                    </div>
+                    <p class="job-description">
+                        Build data pipelines and infrastructure for ML models. Work on data collection, cleaning, 
+                        feature engineering, and creating scalable data solutions for AI/ML applications.
+                    </p>
+                    <ul class="job-requirements">
+                        <li>Pursuing Bachelor's/Master's in CS, Data Engineering, or related field</li>
+                        <li>Experience with data processing frameworks (Spark, Airflow)</li>
+                        <li>Proficiency in Python and SQL</li>
+                        <li>Understanding of ETL processes and data warehousing</li>
+                        <li>Knowledge of cloud platforms (AWS, Azure, GCP) is a plus</li>
+                    </ul>
+                    <button onclick="redirectToApplication('job6')" class="apply-now-btn">Apply Now</button>
+                </div>
+            </div>
+
+            <!-- Benefits Section -->
+            <div class="benefits-section">
+                <h2>Why Join XGENAI?</h2>
+                <div class="benefits-grid">
+                    <div class="benefit-card">
+                        <div class="benefit-icon"><i class="fas fa-graduation-cap"></i></div>
+                        <h3>Learn & Grow</h3>
+                        <p>Work with experienced mentors and gain hands-on experience with cutting-edge technologies</p>
+                    </div>
+                    <div class="benefit-card">
+                        <div class="benefit-icon"><i class="fas fa-rocket"></i></div>
+                        <h3>Real Projects</h3>
+                        <p>Work on production systems and projects that impact real users and businesses</p>
+                    </div>
+                    <div class="benefit-card">
+                        <div class="benefit-icon"><i class="fas fa-globe"></i></div>
+                        <h3>Remote First</h3>
+                        <p>Work from anywhere with flexible hours that fit your schedule and studies</p>
+                    </div>
+                    <div class="benefit-card">
+                        <div class="benefit-icon"><i class="fas fa-lightbulb"></i></div>
+                        <h3>Innovation Culture</h3>
+                        <p>Share ideas, experiment with new technologies, and contribute to innovative solutions</p>
+                    </div>
+                    <div class="benefit-card">
+                        <div class="benefit-icon"><i class="fas fa-handshake"></i></div>
+                        <h3>Certificate & LOR</h3>
+                        <p>Receive internship certificate and letter of recommendation upon successful completion</p>
+                    </div>
+                    <div class="benefit-card">
+                        <div class="benefit-icon"><i class="fas fa-chart-line"></i></div>
+                        <h3>Career Growth</h3>
+                        <p>Outstanding interns may receive pre-placement offers for full-time positions</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 XGENAI. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="careers.js"></script>
+</body>
+</html>

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apply for Data Analyst Intern - XGENAI</title>
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="../careers.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="../index.html" class="logo">
+                <h2>XGENAI</h2>
+            </a>
+            <div class="nav-menu">
+                <a href="../index.html">Home</a>
+                <a href="../careers.html">Careers</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="careers-container" style="padding-top: 100px;">
+        <div class="container">
+            <h1>Apply for Data Analyst Intern</h1>
+            <form action="/submit-job5" method="POST" enctype="multipart/form-data" style="max-width: 600px; margin: 2rem auto;">
+                <div style="margin-bottom: 1.5rem;">
+                    <label for="name" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Full Name *</label>
+                    <input type="text" id="name" name="name" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <label for="email" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Email Address *</label>
+                    <input type="email" id="email" name="email" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <label for="phone" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Phone Number *</label>
+                    <input type="tel" id="phone" name="phone" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <label for="resume" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Upload Resume *</label>
+                    <input type="file" id="resume" name="resume" accept=".pdf,.doc,.docx" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                </div>
+
+                <button type="submit" class="apply-now-btn" style="width: 100%; padding: 1rem; margin-top: 1rem;">Submit Application</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

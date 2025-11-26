@@ -269,3 +269,23 @@ window.addEventListener('load', () => {
         }, 1500);
     }
 });
+
+const applyNowLinks = {
+    job1: 'pages/job1.html',
+    job2: 'pages/job2.html',
+    job3: 'pages/job3.html',
+    job4: 'pages/job4.html',
+    job5: 'pages/job5.html',
+    job6: 'pages/job6.html',
+};
+
+function redirectToApplication(jobId) {
+    if (applyNowLinks[jobId]) {
+        window.location.href = applyNowLinks[jobId];
+    } else {
+        console.error('Invalid job ID');
+    }
+}
+
+// Example usage:
+// redirectToApplication('job1');

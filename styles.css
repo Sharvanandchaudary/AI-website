@@ -10,14 +10,17 @@
 }
 
 :root {
-    --primary-color: #6366f1;
-    --secondary-color: #8b5cf6;
-    --accent-color: #ec4899;
-    --dark-bg: #0f172a;
-    --light-bg: #1e293b;
-    --text-primary: #f1f5f9;
-    --text-secondary: #cbd5e1;
-    --gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
+    /* Modern Dark Blue Theme */
+    --primary-color: #00d4ff;
+    --secondary-color: #0091ff;
+    --accent-color: #00ff88;
+    --dark-bg: #0a0e27;
+    --light-bg: #141b3d;
+    --text-primary: #ffffff;
+    --text-secondary: #a0aec0;
+    --gradient: linear-gradient(135deg, #00d4ff 0%, #0091ff 50%, #0066ff 100%);
+    --accent-gradient: linear-gradient(135deg, #00ff88 0%, #00d4ff 100%);
+    --success-gradient: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
 }
 
 body {
@@ -161,23 +164,13 @@ body {
 /* Hero Section */
 .hero {
     padding: 120px 0 80px;
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+    background: 
+        radial-gradient(circle at 20% 50%, rgba(0, 212, 255, 0.12) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(0, 255, 136, 0.1) 0%, transparent 50%);
     position: relative;
     min-height: calc(100vh - 70px);
     display: flex;
     align-items: center;
-}
-
-.hero::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: 
-        radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
-        radial-gradient(circle at 80% 80%, rgba(236, 72, 153, 0.15) 0%, transparent 50%);
 }
 
 .hero-content {
@@ -282,7 +275,7 @@ body {
 }
 
 .gradient-text {
-    background: var(--gradient);
+    background: linear-gradient(135deg, #00d4ff 0%, #0091ff 50%, #00ff88 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -347,7 +340,7 @@ body {
 
 .btn-primary:hover {
     transform: translateY(-3px);
-    box-shadow: 0 10px 30px rgba(99, 102, 241, 0.5);
+    box-shadow: 0 10px 30px rgba(0, 212, 255, 0.5);
 }
 
 .btn-secondary {

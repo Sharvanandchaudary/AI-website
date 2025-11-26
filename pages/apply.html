@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Application - XGENAI</title>
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="../careers.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        // Get job info from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const jobId = urlParams.get('job');
+        
+        const jobTitles = {
+            'job1': 'AI Intern',
+            'job2': 'Machine Learning Intern',
+            'job3': 'MedTech Intern',
+            'job4': 'Software Developer Intern',
+            'job5': 'Data Analyst Intern',
+            'job6': 'ML Data Engineer Intern'
+        };
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            const jobTitle = jobTitles[jobId] || 'Intern';
+            document.title = `Apply for ${jobTitle} - XGENAI`;
+            document.querySelector('h1').textContent = `Apply for ${jobTitle}`;
+            document.querySelector('input[name="position"]').value = jobTitle;
+        });
+    </script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="../index.html" class="logo">
+                <h2>XGENAI</h2>
+            </a>
+            <div class="nav-menu">
+                <a href="../index.html">Home</a>
+                <a href="../careers.html">Careers</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="careers-container" style="padding-top: 100px;">
+        <div class="container">
+            <h1>Apply for Position</h1>
+            <form method="POST" style="max-width: 700px; margin: 2rem auto; background: rgba(255, 255, 255, 0.03); padding: 2rem; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1);">
+                <input type="hidden" name="position" value="">
+                
+                <div style="margin-bottom: 1.5rem;">
+                    <label for="fullName" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #e5e5e5;">Full Name *</label>
+                    <input type="text" id="fullName" name="fullName" required style="width: 100%; padding: 0.75rem; border: 1px solid #444; border-radius: 8px; background: rgba(0,0,0,0.3); color: white;">
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <label for="email" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #e5e5e5;">Email Address *</label>
+                    <input type="email" id="email" name="email" required style="width: 100%; padding: 0.75rem; border: 1px solid #444; border-radius: 8px; background: rgba(0,0,0,0.3); color: white;">
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <label for="phone" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #e5e5e5;">Phone Number *</label>
+                    <input type="tel" id="phone" name="phone" required style="width: 100%; padding: 0.75rem; border: 1px solid #444; border-radius: 8px; background: rgba(0,0,0,0.3); color: white;">
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <label for="address" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #e5e5e5;">Address *</label>
+                    <textarea id="address" name="address" rows="2" required style="width: 100%; padding: 0.75rem; border: 1px solid #444; border-radius: 8px; background: rgba(0,0,0,0.3); color: white; resize: vertical;"></textarea>
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <label for="college" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #e5e5e5;">College/University *</label>
+                    <input type="text" id="college" name="college" required style="width: 100%; padding: 0.75rem; border: 1px solid #444; border-radius: 8px; background: rgba(0,0,0,0.3); color: white;">
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <label for="degree" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #e5e5e5;">Degree Program *</label>
+                    <input type="text" id="degree" name="degree" placeholder="e.g., B.Tech in Computer Science" required style="width: 100%; padding: 0.75rem; border: 1px solid #444; border-radius: 8px; background: rgba(0,0,0,0.3); color: white;">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                    <div>
+                        <label for="semester" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #e5e5e5;">Current Semester *</label>
+                        <input type="text" id="semester" name="semester" required style="width: 100%; padding: 0.75rem; border: 1px solid #444; border-radius: 8px; background: rgba(0,0,0,0.3); color: white;">
+                    </div>
+                    <div>
+                        <label for="year" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #e5e5e5;">Graduation Year *</label>
+                        <input type="text" id="year" name="year" required style="width: 100%; padding: 0.75rem; border: 1px solid #444; border-radius: 8px; background: rgba(0,0,0,0.3); color: white;">
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <label for="resume" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #e5e5e5;">Upload Resume (PDF) *</label>
+                    <input type="file" id="resume" name="resume" accept=".pdf,.doc,.docx" required style="width: 100%; padding: 0.75rem; border: 1px solid #444; border-radius: 8px; background: rgba(0,0,0,0.3); color: white;">
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <label for="linkedin" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #e5e5e5;">LinkedIn Profile (Optional)</label>
+                    <input type="url" id="linkedin" name="linkedin" placeholder="https://linkedin.com/in/yourprofile" style="width: 100%; padding: 0.75rem; border: 1px solid #444; border-radius: 8px; background: rgba(0,0,0,0.3); color: white;">
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <label for="github" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #e5e5e5;">GitHub Profile (Optional)</label>
+                    <input type="url" id="github" name="github" placeholder="https://github.com/yourusername" style="width: 100%; padding: 0.75rem; border: 1px solid #444; border-radius: 8px; background: rgba(0,0,0,0.3); color: white;">
+                </div>
+
+                <button type="submit" class="apply-now-btn" style="width: 100%; padding: 1rem; margin-top: 1rem;">Submit Application</button>
+            </form>
+        </div>
+    </div>
+    
+    <script src="application-form.js"></script>
+</body>
+</html>
