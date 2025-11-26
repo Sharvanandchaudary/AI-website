@@ -16,7 +16,20 @@ import requests
 load_dotenv()
 
 app = Flask(__name__, static_folder='.')
-CORS(app, origins=os.getenv('CORS_ORIGINS', '*').split(','))
+
+# CORS Configuration - Allow all origins in development, specific in production
+if os.getenv('FLASK_ENV') == 'production':
+    cors_origins = os.getenv('CORS_ORIGINS', '*').split(',')
+    CORS(app, resources={
+        r"/api/*": {
+            "origins": cors_origins,
+            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+            "allow_headers": ["Content-Type", "Authorization"],
+            "supports_credentials": True
+        }
+    })
+else:
+    CORS(app)  # Allow all origins in development
 
 # Configuration
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', secrets.token_hex(32))
@@ -333,12 +346,63 @@ XGENAI Team
         print(f"❌ Error sending email: {e}")
         return False
 
+# Admin credentials (in production, store these securely in database with hashing)
+ADMIN_USERS = {
+    os.getenv('ADMIN_EMAIL', 'admin@xgenai.com'): {
+        'password_hash': hashlib.sha256(os.getenv('ADMIN_PASSWORD', 'Admin@123').encode()).hexdigest(),
+        'role': 'admin'
+    }
+}
+
+# Admin session management
+admin_sessions = {}
+
+def verify_admin_token(token):
+    """Verify admin authentication token"""
+    if not token:
+        return False
+    return token in admin_sessions
+
 # Routes
 
 @app.route('/')
 def index():
     """Serve the main page"""
     return send_from_directory('.', 'index.html')
+
+@app.route('/careers')
+def careers_page():
+    """Serve careers page"""
+    return send_from_directory('.', 'careers.html')
+
+@app.route('/auth')
+def auth_page():
+    """Serve authentication page"""
+    return send_from_directory('.', 'auth.html')
+
+@app.route('/dashboard')
+def dashboard_page():
+    """Serve user dashboard page"""
+    return send_from_directory('.', 'dashboard.html')
+
+@app.route('/apply')
+def apply_page():
+    """Serve application form page"""
+    return send_from_directory('pages', 'apply.html')
+
+@app.route('/admin/login')
+def admin_login_page():
+    """Serve admin login page"""
+    return send_from_directory('.', 'admin-login.html')
+
+@app.route('/admin')
+def admin_page():
+    """Serve admin dashboard (requires authentication)"""
+    # Check for admin token in cookie/header
+    token = request.cookies.get('admin_token') or request.headers.get('Authorization')
+    if not verify_admin_token(token):
+        return send_from_directory('.', 'admin-login.html')
+    return send_from_directory('.', 'admin.html')
 
 @app.route('/<path:path>')
 def serve_static(path):
@@ -358,9 +422,13 @@ def signup():
                 return jsonify({'error': f'{field} is required'}), 400
         
         # Check if user already exists
-        conn = sqlite3.connect(DB_NAME)
+        conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute('SELECT id FROM users WHERE email = ?', (data['email'],))
+        
+        if USE_POSTGRES:
+            cursor.execute('SELECT id FROM users WHERE email = %s', (data['email'],))
+        else:
+            cursor.execute('SELECT id FROM users WHERE email = ?', (data['email'],))
         existing_user = cursor.fetchone()
         
         if existing_user:
@@ -371,12 +439,20 @@ def signup():
         password_hash = hash_password(data['password'])
         
         # Insert new user
-        cursor.execute('''
-            INSERT INTO users (name, email, phone, address, password_hash)
-            VALUES (?, ?, ?, ?, ?)
-        ''', (data['name'], data['email'], data['phone'], data['address'], password_hash))
+        if USE_POSTGRES:
+            cursor.execute('''
+                INSERT INTO users (name, email, phone, address, password_hash, created_at)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                RETURNING id
+            ''', (data['name'], data['email'], data['phone'], data['address'], password_hash, datetime.now()))
+            user_id = cursor.fetchone()[0]
+        else:
+            cursor.execute('''
+                INSERT INTO users (name, email, phone, address, password_hash)
+                VALUES (?, ?, ?, ?, ?)
+            ''', (data['name'], data['email'], data['phone'], data['address'], password_hash))
+            user_id = cursor.lastrowid
         
-        user_id = cursor.lastrowid
         conn.commit()
         conn.close()
         
@@ -400,6 +476,55 @@ def signup():
         print(f"❌ Signup error: {e}")
         return jsonify({'error': 'Internal server error'}), 500
 
+@app.route('/api/admin/login', methods=['POST'])
+def admin_login():
+    """Admin login endpoint"""
+    try:
+        data = request.json
+        email = data.get('email')
+        password = data.get('password')
+        
+        if not email or not password:
+            return jsonify({'error': 'Email and password are required'}), 400
+        
+        # Check admin credentials
+        admin = ADMIN_USERS.get(email)
+        if not admin:
+            return jsonify({'error': 'Invalid credentials'}), 401
+        
+        password_hash = hashlib.sha256(password.encode()).hexdigest()
+        if password_hash != admin['password_hash']:
+            return jsonify({'error': 'Invalid credentials'}), 401
+        
+        # Create admin session token
+        token = secrets.token_urlsafe(32)
+        admin_sessions[token] = {
+            'email': email,
+            'role': admin['role'],
+            'created_at': datetime.now().isoformat()
+        }
+        
+        return jsonify({
+            'success': True,
+            'token': token,
+            'role': admin['role']
+        }), 200
+        
+    except Exception as e:
+        print(f"Error in admin login: {e}")
+        return jsonify({'error': 'Login failed'}), 500
+
+@app.route('/api/admin/logout', methods=['POST'])
+def admin_logout():
+    """Admin logout endpoint"""
+    try:
+        token = request.cookies.get('admin_token') or request.headers.get('Authorization')
+        if token and token in admin_sessions:
+            del admin_sessions[token]
+        return jsonify({'success': True}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/login', methods=['POST'])
 def login():
     """Login user"""
@@ -413,13 +538,21 @@ def login():
         password_hash = hash_password(data['password'])
         
         # Check credentials
-        conn = sqlite3.connect(DB_NAME)
+        conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute('''
-            SELECT id, name, email, phone, address, created_at
-            FROM users
-            WHERE email = ? AND password_hash = ?
-        ''', (data['email'], password_hash))
+        
+        if USE_POSTGRES:
+            cursor.execute('''
+                SELECT id, name, email, phone, address, created_at
+                FROM users
+                WHERE email = %s AND password_hash = %s
+            ''', (data['email'], password_hash))
+        else:
+            cursor.execute('''
+                SELECT id, name, email, phone, address, created_at
+                FROM users
+                WHERE email = ? AND password_hash = ?
+            ''', (data['email'], password_hash))
         
         user = cursor.fetchone()
         
@@ -428,13 +561,22 @@ def login():
             return jsonify({'error': 'Invalid email or password'}), 401
         
         # Update last login
-        cursor.execute('UPDATE users SET last_login = ? WHERE id = ?', 
-                      (datetime.now(), user[0]))
+        if USE_POSTGRES:
+            cursor.execute('UPDATE users SET last_login = %s WHERE id = %s', 
+                          (datetime.now(), user[0]))
+        else:
+            cursor.execute('UPDATE users SET last_login = ? WHERE id = ?', 
+                          (datetime.now(), user[0]))
         
         # Create session token
         token = secrets.token_hex(32)
-        cursor.execute('INSERT INTO sessions (user_id, token) VALUES (?, ?)',
-                      (user[0], token))
+        
+        if USE_POSTGRES:
+            cursor.execute('INSERT INTO sessions (user_id, token) VALUES (%s, %s)',
+                          (user[0], token))
+        else:
+            cursor.execute('INSERT INTO sessions (user_id, token) VALUES (?, ?)',
+                          (user[0], token))
         
         conn.commit()
         conn.close()
@@ -458,9 +600,14 @@ def login():
 
 @app.route('/api/users', methods=['GET'])
 def get_users():
-    """Get all users (admin only)"""
+    """Get all users (admin only - requires authentication)"""
     try:
-        conn = sqlite3.connect(DB_NAME)
+        # Verify admin authentication
+        token = request.cookies.get('admin_token') or request.headers.get('Authorization')
+        if not verify_admin_token(token):
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute('''
             SELECT id, name, email, phone, address, created_at, last_login
@@ -476,8 +623,8 @@ def get_users():
                 'email': row[2],
                 'phone': row[3],
                 'address': row[4],
-                'created_at': row[5],
-                'last_login': row[6]
+                'created_at': str(row[5]) if row[5] else None,
+                'last_login': str(row[6]) if row[6] else None
             })
         
         conn.close()
@@ -489,9 +636,14 @@ def get_users():
 
 @app.route('/api/emails', methods=['GET'])
 def get_emails():
-    """Get all sent emails (admin only)"""
+    """Get all sent emails (admin only - requires authentication)"""
     try:
-        conn = sqlite3.connect(DB_NAME)
+        # Verify admin authentication
+        token = request.cookies.get('admin_token') or request.headers.get('Authorization')
+        if not verify_admin_token(token):
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute('''
             SELECT e.id, e.to_email, e.subject, e.body, e.sent_at, u.name
@@ -520,9 +672,14 @@ def get_emails():
 
 @app.route('/api/stats', methods=['GET'])
 def get_stats():
-    """Get statistics"""
+    """Get statistics (admin only - requires authentication)"""
     try:
-        conn = sqlite3.connect(DB_NAME)
+        # Verify admin authentication
+        token = request.cookies.get('admin_token') or request.headers.get('Authorization')
+        if not verify_admin_token(token):
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         # Total users
@@ -534,10 +691,16 @@ def get_stats():
         total_emails = cursor.fetchone()[0]
         
         # Users today
-        cursor.execute('''
-            SELECT COUNT(*) FROM users 
-            WHERE DATE(created_at) = DATE('now')
-        ''')
+        if USE_POSTGRES:
+            cursor.execute('''
+                SELECT COUNT(*) FROM users 
+                WHERE DATE(created_at) = CURRENT_DATE
+            ''')
+        else:
+            cursor.execute('''
+                SELECT COUNT(*) FROM users 
+                WHERE DATE(created_at) = DATE('now')
+            ''')
         today_users = cursor.fetchone()[0]
         
         conn.close()
@@ -774,49 +937,63 @@ def submit_application():
     try:
         data = request.json
         
+        print(f"📝 Received application data: {data}")
+        
         # Validate required fields
         required_fields = ['position', 'fullName', 'email', 'phone', 'address', 
                           'college', 'degree', 'semester', 'year', 'about', 'resumeName']
         
+        missing_fields = []
         for field in required_fields:
             if not data.get(field):
-                return jsonify({'error': f'Missing required field: {field}'}), 400
+                missing_fields.append(field)
+        
+        if missing_fields:
+            print(f"❌ Missing fields: {missing_fields}")
+            return jsonify({'error': f'Missing required fields: {", ".join(missing_fields)}'}), 400
+        
+        print(f"✅ All required fields present for {data['fullName']}")
         
         conn = get_db_connection()
         cursor = conn.cursor()
         
         # Insert application
         if USE_POSTGRES:
+            print("📊 Using PostgreSQL database")
             cursor.execute('''
                 INSERT INTO applications 
                 (position, full_name, email, phone, address, college, degree, 
-                 semester, year, about, resume_name, linkedin, github, applied_at)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                 semester, year, about, resume_name, linkedin, github, applied_at, status)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 RETURNING id
             ''', (
                 data['position'], data['fullName'], data['email'], data['phone'],
                 data['address'], data['college'], data['degree'], data['semester'],
                 data['year'], data['about'], data['resumeName'],
                 data.get('linkedin', ''), data.get('github', ''),
-                datetime.now()
+                datetime.now(), 'pending'
             ))
             application_id = cursor.fetchone()[0]
         else:
+            print("📊 Using SQLite database")
             cursor.execute('''
                 INSERT INTO applications 
                 (position, full_name, email, phone, address, college, degree, 
-                 semester, year, about, resume_name, linkedin, github, applied_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 semester, year, about, resume_name, linkedin, github, applied_at, status)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 data['position'], data['fullName'], data['email'], data['phone'],
                 data['address'], data['college'], data['degree'], data['semester'],
                 data['year'], data['about'], data['resumeName'],
                 data.get('linkedin', ''), data.get('github', ''),
-                datetime.now()
+                datetime.now(), 'pending'
             ))
             application_id = cursor.lastrowid
         
         conn.commit()
+        conn.close()
+        
+        print(f"✅ Application saved with ID: {application_id}")
         
         # Send confirmation email
         email_body = f"""
@@ -840,34 +1017,28 @@ XGENAI Recruitment Team
         
         send_email_mailgun(data['email'], f"Application Received - {data['position']}", email_body)
         
-        # Store email record
-        if USE_POSTGRES:
-            cursor.execute('''
-                INSERT INTO emails (to_email, subject, body, sent_at)
-                VALUES (%s, %s, %s, %s)
-            ''', (data['email'], f"Application Received - {data['position']}", email_body, datetime.now()))
-        else:
-            cursor.execute('''
-                INSERT INTO emails (to_email, subject, body, sent_at)
-                VALUES (?, ?, ?, ?)
-            ''', (data['email'], f"Application Received - {data['position']}", email_body, datetime.now()))
-        
-        conn.commit()
-        conn.close()
+        print(f"✅ Application submitted successfully for {data['fullName']}")
         
         return jsonify({
-            'message': 'Application submitted successfully',
+            'message': 'Application submitted successfully!',
             'application_id': application_id
         }), 201
         
     except Exception as e:
         print(f"❌ Error submitting application: {e}")
-        return jsonify({'error': 'Failed to submit application'}), 500
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': f'Failed to submit application: {str(e)}'}), 500
 
 @app.route('/api/admin/applications', methods=['GET'])
 def get_all_applications():
-    """Get all job applications (admin only)"""
+    """Get all job applications (admin only - requires authentication)"""
     try:
+        # Verify admin authentication
+        token = request.cookies.get('admin_token') or request.headers.get('Authorization')
+        if not verify_admin_token(token):
+            return jsonify({'error': 'Unauthorized'}), 401
+        
         conn = get_db_connection()
         cursor = conn.cursor()
         
@@ -904,8 +1075,13 @@ def get_all_applications():
 
 @app.route('/api/admin/applications/<int:app_id>/status', methods=['PUT'])
 def update_application_status(app_id):
-    """Update application status (admin only)"""
+    """Update application status (admin only - requires authentication)"""
     try:
+        # Verify admin authentication
+        token = request.cookies.get('admin_token') or request.headers.get('Authorization')
+        if not verify_admin_token(token):
+            return jsonify({'error': 'Unauthorized'}), 401
+        
         data = request.json
         new_status = data.get('status')
         
@@ -943,8 +1119,13 @@ def update_application_status(app_id):
 
 @app.route('/api/admin/send-application-email', methods=['POST'])
 def send_application_email():
-    """Send email to candidate about application status (admin only)"""
+    """Send email to candidate about application status (admin only - requires authentication)"""
     try:
+        # Verify admin authentication
+        token = request.cookies.get('admin_token') or request.headers.get('Authorization')
+        if not verify_admin_token(token):
+            return jsonify({'error': 'Unauthorized'}), 401
+        
         data = request.json
         
         required_fields = ['applicationId', 'email', 'subject', 'body']
@@ -978,6 +1159,58 @@ def send_application_email():
     except Exception as e:
         print(f"❌ Error sending application email: {e}")
         return jsonify({'error': 'Internal server error'}), 500
+
+@app.route('/api/admin/init-db', methods=['POST'])
+def init_database():
+    """Initialize/reset database (admin only)"""
+    try:
+        # Verify admin authentication
+        token = request.cookies.get('admin_token') or request.headers.get('Authorization')
+        if not verify_admin_token(token):
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        init_db()
+        return jsonify({'message': 'Database initialized successfully'}), 200
+    except Exception as e:
+        print(f"Error initializing database: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/admin/check-db', methods=['GET'])
+def check_database():
+    """Check database tables and counts (admin only)"""
+    try:
+        # Verify admin authentication
+        token = request.cookies.get('admin_token') or request.headers.get('Authorization')
+        if not verify_admin_token(token):
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Get counts from all tables
+        stats = {}
+        
+        cursor.execute('SELECT COUNT(*) FROM users')
+        stats['users'] = cursor.fetchone()[0]
+        
+        cursor.execute('SELECT COUNT(*) FROM applications')
+        stats['applications'] = cursor.fetchone()[0]
+        
+        cursor.execute('SELECT COUNT(*) FROM emails')
+        stats['emails'] = cursor.fetchone()[0]
+        
+        cursor.execute('SELECT COUNT(*) FROM sessions')
+        stats['sessions'] = cursor.fetchone()[0]
+        
+        conn.close()
+        
+        return jsonify({
+            'database': 'PostgreSQL' if USE_POSTGRES else 'SQLite',
+            'stats': stats
+        }), 200
+    except Exception as e:
+        print(f"Error checking database: {e}")
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     # Initialize database

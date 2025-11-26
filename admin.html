@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="typography.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         .admin-container {
             max-width: 1400px;
@@ -130,12 +131,12 @@
     <nav class="navbar">
         <div class="container">
             <div class="logo">
-                <a href="index.html"><h2>XGEN<span>AI</span></h2></a>
+                <a href="/"><h2>XGEN<span>AI</span></h2></a>
             </div>
             <ul class="nav-menu">
-                <li><a href="index.html#home">Home</a></li>
-                <li><a href="auth.html">Login / Sign Up</a></li>
-                <li><a href="admin.html" style="color: var(--primary-color);">Admin</a></li>
+                <li><a href="/#home">Home</a></li>
+                <li><a href="/auth">Login / Sign Up</a></li>
+                <li><a href="/admin" style="color: var(--primary-color);">Admin</a></li>
             </ul>
         </div>
     </nav>
@@ -144,6 +145,12 @@
         <div class="admin-header">
             <h1>Admin Dashboard</h1>
             <p style="color: var(--text-secondary);">Manage registered users and view email confirmations</p>
+            <div style="margin-top: 1rem;">
+                <button onclick="checkDatabase()" style="padding: 0.5rem 1rem; background: var(--accent-gradient); color: white; border: none; border-radius: 6px; cursor: pointer; margin-right: 0.5rem;">
+                    Check Database Status
+                </button>
+                <span id="dbStatus" style="color: var(--text-secondary); font-size: 0.875rem;"></span>
+            </div>
         </div>
 
         <!-- Stats -->
@@ -216,12 +223,108 @@
 
     <script>
         // API URL configuration
-        const API_URL = window.location.hostname === 'localhost' ? 'http://localhost:5000' : 'https://your-backend-url.com';
+        const API_URL = window.location.origin;
+        
+        // Check admin authentication on page load
+        function checkAuth() {
+            const token = getCookie('admin_token') || localStorage.getItem('admin_token');
+            if (!token) {
+                // Not authenticated, redirect to login
+                window.location.href = '/admin/login';
+                return false;
+            }
+            return token;
+        }
+
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+        }
+
+        function logout() {
+            // Clear authentication
+            document.cookie = 'admin_token=; path=/; max-age=0';
+            localStorage.removeItem('admin_token');
+            localStorage.removeItem('admin_role');
+            
+            // Call logout API
+            fetch(`${API_URL}/api/admin/logout`, {
+                method: 'POST',
+                headers: { 'Authorization': getCookie('admin_token') || localStorage.getItem('admin_token') }
+            }).finally(() => {
+                window.location.href = '/admin/login';
+            });
+        }
+
+        // Add logout button and check auth on load
+        window.addEventListener('load', () => {
+            const token = checkAuth();
+            if (!token) return;
+
+            // Add logout button to nav
+            const nav = document.querySelector('.nav-menu');
+            if (nav && !document.getElementById('logoutBtn')) {
+                const logoutLi = document.createElement('li');
+                logoutLi.innerHTML = '<a href="#" id="logoutBtn" style="color: #ef4444;"><i class="fas fa-sign-out-alt"></i> Logout</a>';
+                nav.appendChild(logoutLi);
+                
+                document.getElementById('logoutBtn').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    if (confirm('Are you sure you want to logout?')) {
+                        logout();
+                    }
+                });
+            }
+        });
+
+        // Check database status
+        async function checkDatabase() {
+            const token = checkAuth();
+            if (!token) return;
+            
+            const statusEl = document.getElementById('dbStatus');
+            statusEl.textContent = 'Checking...';
+            
+            try {
+                const response = await fetch(`${API_URL}/api/admin/check-db`, {
+                    headers: { 'Authorization': token }
+                });
+                
+                if (response.status === 401) {
+                    logout();
+                    return;
+                }
+                
+                const data = await response.json();
+                statusEl.innerHTML = `<strong>${data.database}</strong> - Users: ${data.stats.users}, Applications: ${data.stats.applications}, Emails: ${data.stats.emails}`;
+                statusEl.style.color = 'var(--accent-color)';
+                
+                // Reload dashboard to show updated data
+                loadDashboard();
+                loadJobApplications();
+            } catch (error) {
+                console.error('Error checking database:', error);
+                statusEl.textContent = 'Error checking database';
+                statusEl.style.color = '#ef4444';
+            }
+        }
         
         async function loadDashboard() {
+            const token = checkAuth();
+            if (!token) return;
+            
             try {
-                // Fetch statistics
-                const statsResponse = await fetch(`${API_URL}/api/stats`);
+                // Fetch statistics with auth token
+                const statsResponse = await fetch(`${API_URL}/api/stats`, {
+                    headers: { 'Authorization': token }
+                });
+                
+                if (statsResponse.status === 401) {
+                    logout();
+                    return;
+                }
+                
                 if (statsResponse.ok) {
                     const stats = await statsResponse.json();
                     document.getElementById('totalUsers').textContent = stats.total_users || 0;
@@ -229,8 +332,16 @@
                     document.getElementById('todayUsers').textContent = stats.today_users || 0;
                 }
 
-                // Fetch users
-                const usersResponse = await fetch(`${API_URL}/api/users`);
+                // Fetch users with auth token
+                const usersResponse = await fetch(`${API_URL}/api/users`, {
+                    headers: { 'Authorization': token }
+                });
+                
+                if (usersResponse.status === 401) {
+                    logout();
+                    return;
+                }
+                
                 if (usersResponse.ok) {
                     const usersData = await usersResponse.json();
                     const users = usersData.users || [];
@@ -253,8 +364,16 @@
                     }
                 }
 
-                // Fetch emails
-                const emailsResponse = await fetch(`${API_URL}/api/emails`);
+                // Fetch emails with auth token
+                const emailsResponse = await fetch(`${API_URL}/api/emails`, {
+                    headers: { 'Authorization': token }
+                });
+                
+                if (emailsResponse.status === 401) {
+                    logout();
+                    return;
+                }
+                
                 if (emailsResponse.ok) {
                     const emailsData = await emailsResponse.json();
                     const emails = emailsData.emails || [];
@@ -282,9 +401,19 @@
 
         // Load job applications
         async function loadJobApplications() {
+            const token = checkAuth();
+            if (!token) return;
+            
             const applicationsSection = document.getElementById('jobApplicationsSection');
             try {
-                const response = await fetch(`${API_URL}/api/admin/applications`);
+                const response = await fetch(`${API_URL}/api/admin/applications`, {
+                    headers: { 'Authorization': token }
+                });
+                
+                if (response.status === 401) {
+                    logout();
+                    return;
+                }
                 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
@@ -387,16 +516,25 @@
 
         // Update application status
         async function updateApplicationStatus(appId, newStatus) {
+            const token = checkAuth();
+            if (!token) return;
+            
             try {
                 const response = await fetch(`${API_URL}/api/admin/applications/${appId}/status`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Authorization': token
                     },
                     body: JSON.stringify({ status: newStatus })
                 });
 
                 const result = await response.json();
+                
+                if (response.status === 401) {
+                    logout();
+                    return;
+                }
                 
                 if (response.ok) {
                     console.log('Status updated successfully');
@@ -452,10 +590,14 @@
             }
 
             try {
+                const token = checkAuth();
+                if (!token) return;
+                
                 const response = await fetch(`${API_URL}/api/admin/send-application-email`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Authorization': token
                     },
                     body: JSON.stringify({
                         applicationId: appId,
@@ -466,6 +608,11 @@
                 });
 
                 const result = await response.json();
+                
+                if (response.status === 401) {
+                    logout();
+                    return;
+                }
                 
                 if (response.ok) {
                     alert('Email sent successfully!');

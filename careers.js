@@ -1,10 +1,11 @@
-const API_URL = 'http://localhost:5000';
+const API_URL = window.location.origin;
 
 let currentPosition = '';
 
 // Redirect to individual application pages
 function redirectToApplication(jobId) {
-    window.location.href = `pages/apply.html?job=${jobId}`;
+    console.log('Redirecting to application form for:', jobId);
+    window.location.href = `/apply?job=${jobId}`;
 }
 
 // Open application modal
