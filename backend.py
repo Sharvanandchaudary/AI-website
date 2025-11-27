@@ -51,39 +51,18 @@ MAILGUN_API_KEY = os.getenv('MAILGUN_API_KEY', '')
 MAILGUN_DOMAIN = os.getenv('MAILGUN_DOMAIN', '')
 MAILGUN_FROM_EMAIL = os.getenv('MAILGUN_FROM_EMAIL', 'noreply@yourdomain.com')
 
-# Use PostgreSQL in production
-if IS_PRODUCTION and DATABASE_URL.startswith('postgres://'):
+# Use PostgreSQL in production - Check for postgres:// or postgresql:// URL
+if DATABASE_URL.startswith('postgres://') or DATABASE_URL.startswith('postgresql://'):
     # Render uses postgres:// but psycopg2 needs postgresql://
-    DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
+    if DATABASE_URL.startswith('postgres://'):
+        DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
     import psycopg2
     USE_POSTGRES = True
+    print(f"🔧 Using PostgreSQL database")
 else:
     USE_POSTGRES = False
     DB_NAME = DATABASE_URL
-
-def get_db_connection():
-    """Get database connection (SQLite or PostgreSQL)"""
-    if USE_POSTGRES:
-        conn = psycopg2.connect(DATABASE_URL)
-        conn.autocommit = False
-        return conn
-    else:
-        return sqlite3.connect(DB_NAME)
-
-# Mailgun setup
-MAILGUN_API_KEY = os.getenv('MAILGUN_API_KEY', '')
-MAILGUN_DOMAIN = os.getenv('MAILGUN_DOMAIN', '')
-MAILGUN_FROM_EMAIL = os.getenv('MAILGUN_FROM_EMAIL', 'noreply@yourdomain.com')
-
-# Use PostgreSQL in production
-if IS_PRODUCTION and DATABASE_URL.startswith('postgres://'):
-    # Render uses postgres:// but psycopg2 needs postgresql://
-    DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
-    import psycopg2
-    USE_POSTGRES = True
-else:
-    USE_POSTGRES = False
-    DB_NAME = DATABASE_URL
+    print(f"🔧 Using SQLite database: {DB_NAME}")
 
 def get_db_connection():
     """Get database connection (SQLite or PostgreSQL)"""
@@ -96,6 +75,7 @@ def get_db_connection():
 
 def init_db():
     """Initialize the database with required tables"""
+    print("🔧 Initializing database tables...")
     conn = get_db_connection()
     cursor = conn.cursor()
     
