@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intern Dashboard - XGENAI</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0a0e27 0%, #141b3d 100%);
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+        }
+
+        /* Navigation */
+        .navbar {
+            background: rgba(20, 27, 61, 0.95);
+            padding: 20px 50px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid rgba(0, 212, 255, 0.3);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .navbar-brand h1 {
+            color: #00d4ff;
+            font-size: 24px;
+        }
+
+        .intern-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .intern-name {
+            text-align: right;
+        }
+
+        .intern-name h3 {
+            color: #00d4ff;
+            font-size: 18px;
+        }
+
+        .intern-name p {
+            color: #888;
+            font-size: 14px;
+        }
+
+        .logout-btn {
+            background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 68, 68, 0.4);
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1400px;
+            margin: 30px auto;
+            padding: 0 30px;
+        }
+
+        /* Week Header */
+        .week-header {
+            background: rgba(20, 27, 61, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            border: 2px solid rgba(0, 212, 255, 0.3);
+        }
+
+        .week-header h2 {
+            color: #00d4ff;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .progress-bar {
+            background: rgba(255, 255, 255, 0.1);
+            height: 30px;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-top: 15px;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #00ff88 0%, #00d4ff 100%);
+            height: 100%;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+
+        /* Dashboard Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: rgba(20, 27, 61, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            border: 2px solid rgba(0, 212, 255, 0.3);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(0, 212, 255, 0.2);
+        }
+
+        .card-header i {
+            font-size: 28px;
+            color: #00d4ff;
+        }
+
+        .card-header h3 {
+            color: #00d4ff;
+            font-size: 22px;
+        }
+
+        /* Task Card */
+        .task-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border-left: 4px solid #00d4ff;
+        }
+
+        .task-item h4 {
+            color: #00d4ff;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .task-item p {
+            color: #ccc;
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        .task-item .task-meta {
+            display: flex;
+            gap: 15px;
+            font-size: 13px;
+            color: #888;
+            margin-top: 10px;
+        }
+
+        /* Mini Project Section */
+        .mini-project {
+            background: rgba(0, 255, 136, 0.1);
+            border-left-color: #00ff88;
+        }
+
+        /* DS & Algo Section */
+        .ds-algo {
+            background: rgba(0, 145, 255, 0.1);
+            border-left-color: #0091ff;
+        }
+
+        /* AI News Section */
+        .ai-news {
+            background: rgba(255, 215, 0, 0.1);
+            border-left-color: #ffd700;
+        }
+
+        /* Submission Form */
+        .submission-form {
+            margin-top: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #00d4ff;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(0, 212, 255, 0.3);
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+        }
+
+        .form-group textarea {
+            min-height: 120px;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        .file-upload {
+            border: 2px dashed rgba(0, 212, 255, 0.5);
+            padding: 30px;
+            text-align: center;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .file-upload:hover {
+            background: rgba(0, 212, 255, 0.1);
+            border-color: #00d4ff;
+        }
+
+        .file-upload i {
+            font-size: 40px;
+            color: #00d4ff;
+            margin-bottom: 10px;
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #00ff88 0%, #00d4ff 100%);
+            color: #0a0e27;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 16px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 255, 136, 0.4);
+        }
+
+        /* Submission History */
+        .history-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .history-info h4 {
+            color: #00d4ff;
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+
+        .history-info p {
+            color: #888;
+            font-size: 13px;
+        }
+
+        .status-badge {
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-submitted {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+        }
+
+        .status-pending {
+            background: rgba(255, 215, 0, 0.2);
+            color: #ffd700;
+        }
+
+        .status-reviewed {
+            background: rgba(0, 212, 255, 0.2);
+            color: #00d4ff;
+        }
+
+        /* Learning Notes */
+        .learning-notes {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+
+        .learning-notes h4 {
+            color: #00ff88;
+            margin-bottom: 10px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #888;
+        }
+
+        .empty-state i {
+            font-size: 50px;
+            margin-bottom: 15px;
+            color: #555;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .navbar {
+                flex-direction: column;
+                gap: 20px;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <i class="fas fa-graduation-cap"></i>
+            <h1>XGENAI Intern Dashboard</h1>
+        </div>
+        <div class="intern-info">
+            <div class="intern-name">
+                <h3 id="internName">Loading...</h3>
+                <p id="internPosition">Position</p>
+            </div>
+            <button class="logout-btn" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Week Progress Header -->
+        <div class="week-header">
+            <h2><i class="fas fa-calendar-week"></i> Week <span id="currentWeek">1</span> Progress</h2>
+            <p>Complete your assignments and track your learning journey</p>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill" style="width: 0%">0%</div>
+            </div>
+        </div>
+
+        <!-- Dashboard Grid -->
+        <div class="dashboard-grid">
+            <!-- Tasks Section -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-tasks"></i>
+                    <h3>Weekly Tasks</h3>
+                </div>
+                <div id="tasksContainer">
+                    <div class="empty-state">
+                        <i class="fas fa-clipboard-list"></i>
+                        <p>Loading tasks...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mini Project Section -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-project-diagram"></i>
+                    <h3>Mini Project</h3>
+                </div>
+                <div id="miniProjectContainer">
+                    <div class="empty-state">
+                        <i class="fas fa-code"></i>
+                        <p>No mini project assigned this week</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DS & Algo Section -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-brain"></i>
+                    <h3>DS & Algorithms</h3>
+                </div>
+                <div id="dsAlgoContainer">
+                    <div class="empty-state">
+                        <i class="fas fa-book"></i>
+                        <p>No DS & Algo topic assigned this week</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI News Section -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-newspaper"></i>
+                    <h3>AI Tool News</h3>
+                </div>
+                <div id="aiNewsContainer">
+                    <div class="empty-state">
+                        <i class="fas fa-robot"></i>
+                        <p>No AI news this week</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Submission Section -->
+        <div class="card" style="margin-bottom: 30px;">
+            <div class="card-header">
+                <i class="fas fa-upload"></i>
+                <h3>Submit Your Work</h3>
+            </div>
+            <form id="submissionForm" class="submission-form">
+                <div class="form-group">
+                    <label><i class="fas fa-tasks"></i> Select Task</label>
+                    <select id="taskSelect" required>
+                        <option value="">Choose a task...</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label><i class="fas fa-file"></i> Upload Screenshot or PDF</label>
+                    <div class="file-upload" id="fileUpload">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>Click to upload or drag & drop</p>
+                        <p style="font-size: 12px; color: #888;">Supported: PDF, PNG, JPG (Max 5MB)</p>
+                        <input type="file" id="fileInput" accept=".pdf,.png,.jpg,.jpeg" style="display: none;">
+                    </div>
+                    <p id="fileName" style="color: #00ff88; margin-top: 10px;"></p>
+                </div>
+
+                <div class="form-group">
+                    <label><i class="fas fa-lightbulb"></i> What did you learn from this task?</label>
+                    <textarea id="whatLearned" placeholder="Share your key learnings, challenges faced, and insights gained..." required></textarea>
+                </div>
+
+                <button type="submit" class="submit-btn">
+                    <i class="fas fa-paper-plane"></i> Submit Task
+                </button>
+            </form>
+        </div>
+
+        <!-- Submission History -->
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-history"></i>
+                <h3>Submission History</h3>
+            </div>
+            <div id="historyContainer">
+                <div class="empty-state">
+                    <i class="fas fa-clock"></i>
+                    <p>No submissions yet</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="scripts/intern-dashboard.js"></script>
+</body>
+</html>

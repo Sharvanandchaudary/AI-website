@@ -219,7 +219,189 @@
             <h2 class="section-title">Job Applications</h2>
             <p class="no-data">Loading applications...</p>
         </div>
+
+        <!-- Intern Management Section -->
+        <div style="margin-top: 3rem; background: var(--light-bg); padding: 2rem; border-radius: 12px; border: 1px solid rgba(0, 212, 255, 0.3);">
+            <h2 class="section-title" style="color: #00d4ff;">
+                <i class="fas fa-user-graduate"></i> Intern Management System
+            </h2>
+            <p style="color: var(--text-secondary); margin-bottom: 2rem;">
+                Select interns from applications and manage their weekly tasks and progress
+            </p>
+
+            <!-- Tabs for Intern Management -->
+            <div style="display: flex; gap: 1rem; margin-bottom: 2rem; border-bottom: 2px solid rgba(0, 212, 255, 0.2);">
+                <button class="intern-tab active" onclick="showInternTab('selected')" id="selectedTab">
+                    <i class="fas fa-users"></i> Selected Interns
+                </button>
+                <button class="intern-tab" onclick="showInternTab('tasks')" id="tasksTab">
+                    <i class="fas fa-tasks"></i> Weekly Tasks
+                </button>
+                <button class="intern-tab" onclick="showInternTab('submissions')" id="submissionsTab">
+                    <i class="fas fa-upload"></i> Submissions
+                </button>
+            </div>
+
+            <!-- Selected Interns Tab -->
+            <div id="selectedInternsTab" class="intern-tab-content">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <h3>Selected Interns (<span id="internCount">0</span>)</h3>
+                    <button onclick="refreshInterns()" style="padding: 0.5rem 1rem; background: var(--accent-gradient); color: white; border: none; border-radius: 6px; cursor: pointer;">
+                        <i class="fas fa-sync"></i> Refresh
+                    </button>
+                </div>
+                <div id="internsContainer">
+                    <p class="no-data">Loading interns...</p>
+                </div>
+            </div>
+
+            <!-- Weekly Tasks Tab -->
+            <div id="weeklyTasksTab" class="intern-tab-content" style="display: none;">
+                <h3 style="margin-bottom: 1.5rem;">Create Weekly Tasks</h3>
+                
+                <form id="taskCreationForm" style="background: rgba(255, 255, 255, 0.05); padding: 2rem; border-radius: 10px; margin-bottom: 2rem;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                        <div>
+                            <label style="display: block; margin-bottom: 0.5rem; color: #00d4ff;">Week Number</label>
+                            <input type="number" id="weekNumber" min="1" required style="width: 100%; padding: 0.75rem; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(0, 212, 255, 0.3); border-radius: 6px; color: white;">
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 0.5rem; color: #00d4ff;">Due Date</label>
+                            <input type="date" id="dueDate" style="width: 100%; padding: 0.75rem; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(0, 212, 255, 0.3); border-radius: 6px; color: white;">
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; color: #00d4ff;">Task Title</label>
+                        <input type="text" id="taskTitle" required placeholder="e.g., Complete React Tutorial" style="width: 100%; padding: 0.75rem; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(0, 212, 255, 0.3); border-radius: 6px; color: white;">
+                    </div>
+
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; color: #00d4ff;">Task Description</label>
+                        <textarea id="taskDescription" required placeholder="Detailed description of the task..." style="width: 100%; padding: 0.75rem; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(0, 212, 255, 0.3); border-radius: 6px; color: white; min-height: 100px; font-family: inherit;"></textarea>
+                    </div>
+
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; color: #00ff88;">Mini Project Guidelines (Optional)</label>
+                        <textarea id="miniProjectGuidelines" placeholder="Guidelines for mini project implementation..." style="width: 100%; padding: 0.75rem; background: rgba(0, 255, 136, 0.05); border: 1px solid rgba(0, 255, 136, 0.3); border-radius: 6px; color: white; min-height: 80px; font-family: inherit;"></textarea>
+                    </div>
+
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; color: #0091ff;">DS & Algorithms Topic (Optional)</label>
+                        <input type="text" id="dsAlgoTopic" placeholder="e.g., Binary Search Trees, Dynamic Programming" style="width: 100%; padding: 0.75rem; background: rgba(0, 145, 255, 0.05); border: 1px solid rgba(0, 145, 255, 0.3); border-radius: 6px; color: white;">
+                    </div>
+
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; color: #ffd700;">AI Tool News (Optional)</label>
+                        <textarea id="aiNews" placeholder="Latest AI tool updates and news..." style="width: 100%; padding: 0.75rem; background: rgba(255, 215, 0, 0.05); border: 1px solid rgba(255, 215, 0, 0.3); border-radius: 6px; color: white; min-height: 80px; font-family: inherit;"></textarea>
+                    </div>
+
+                    <button type="submit" style="padding: 0.75rem 2rem; background: linear-gradient(135deg, #00ff88 0%, #00d4ff 100%); color: #0a0e27; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 16px;">
+                        <i class="fas fa-plus"></i> Create Task
+                    </button>
+                </form>
+
+                <h3 style="margin-bottom: 1.5rem;">Existing Tasks</h3>
+                <div id="existingTasksContainer">
+                    <p class="no-data">No tasks created yet</p>
+                </div>
+            </div>
+
+            <!-- Submissions Tab -->
+            <div id="submissionsTab" class="intern-tab-content" style="display: none;">
+                <h3 style="margin-bottom: 1.5rem;">Intern Submissions</h3>
+                <div id="submissionsContainer">
+                    <p class="no-data">Select an intern to view their submissions</p>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <style>
+        .intern-tab {
+            padding: 0.75rem 1.5rem;
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            color: #888;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .intern-tab:hover {
+            color: #00d4ff;
+        }
+
+        .intern-tab.active {
+            color: #00d4ff;
+            border-bottom-color: #00d4ff;
+        }
+
+        .intern-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .intern-info h4 {
+            color: #00d4ff;
+            margin-bottom: 0.5rem;
+        }
+
+        .intern-info p {
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        .intern-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-view {
+            padding: 0.5rem 1rem;
+            background: linear-gradient(135deg, #00d4ff 0%, #0091ff 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-view:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 212, 255, 0.3);
+        }
+
+        .select-intern-btn {
+            padding: 0.5rem 1rem;
+            background: linear-gradient(135deg, #00ff88 0%, #00d4ff 100%);
+            color: #0a0e27;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .select-intern-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 255, 136, 0.3);
+        }
+
+        .select-intern-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
 
     <script>
         // API URL configuration
@@ -628,12 +810,351 @@
         // Load dashboard on page load
         loadDashboard();
         loadJobApplications();
+        loadInterns();
 
         // Refresh every 5 seconds
         setInterval(() => {
             loadDashboard();
             loadJobApplications();
         }, 5000);
+
+        // ============================================================
+        // INTERN MANAGEMENT FUNCTIONS
+        // ============================================================
+
+        // Tab switching
+        function showInternTab(tab) {
+            // Hide all tabs
+            document.querySelectorAll('.intern-tab-content').forEach(t => t.style.display = 'none');
+            document.querySelectorAll('.intern-tab').forEach(t => t.classList.remove('active'));
+
+            // Show selected tab
+            if (tab === 'selected') {
+                document.getElementById('selectedInternsTab').style.display = 'block';
+                document.getElementById('selectedTab').classList.add('active');
+                loadInterns();
+            } else if (tab === 'tasks') {
+                document.getElementById('weeklyTasksTab').style.display = 'block';
+                document.getElementById('tasksTab').classList.add('active');
+                loadExistingTasks();
+            } else if (tab === 'submissions') {
+                document.getElementById('submissionsTab').style.display = 'block';
+                document.getElementById('submissionsTab').classList.add('active');
+                loadAllSubmissions();
+            }
+        }
+
+        // Load selected interns
+        async function loadInterns() {
+            const token = getCookie('admin_token') || localStorage.getItem('admin_token');
+            const container = document.getElementById('internsContainer');
+
+            try {
+                const response = await fetch(`${API_URL}/api/admin/interns`, {
+                    headers: { 'Authorization': token }
+                });
+
+                if (response.status === 401) {
+                    logout();
+                    return;
+                }
+
+                const data = await response.json();
+
+                if (data.interns && data.interns.length > 0) {
+                    document.getElementById('internCount').textContent = data.interns.length;
+                    container.innerHTML = data.interns.map(intern => `
+                        <div class="intern-card">
+                            <div class="intern-info">
+                                <h4>${intern.name}</h4>
+                                <p>
+                                    <i class="fas fa-envelope"></i> ${intern.email} | 
+                                    <i class="fas fa-briefcase"></i> ${intern.position} | 
+                                    <i class="fas fa-university"></i> ${intern.college}
+                                </p>
+                                <p style="font-size: 0.85rem;">
+                                    Started: ${new Date(intern.start_date).toLocaleDateString()} | 
+                                    Status: <span style="color: ${intern.status === 'active' ? '#00ff88' : '#ff4444'}">${intern.status}</span>
+                                </p>
+                            </div>
+                            <div class="intern-actions">
+                                <button class="btn-view" onclick="viewInternDashboard(${intern.id})">
+                                    <i class="fas fa-chart-line"></i> View Dashboard
+                                </button>
+                                <button class="btn-view" onclick="viewInternSubmissions(${intern.id}, '${intern.name}')">
+                                    <i class="fas fa-tasks"></i> Submissions
+                                </button>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    document.getElementById('internCount').textContent = '0';
+                    container.innerHTML = '<p class="no-data">No interns selected yet. Select applicants from the Applications section above.</p>';
+                }
+            } catch (error) {
+                console.error('Error loading interns:', error);
+                container.innerHTML = '<p class="no-data">Error loading interns</p>';
+            }
+        }
+
+        function refreshInterns() {
+            loadInterns();
+        }
+
+        // View intern submissions
+        async function viewInternSubmissions(internId, internName) {
+            const token = getCookie('admin_token') || localStorage.getItem('admin_token');
+
+            try {
+                const response = await fetch(`${API_URL}/api/admin/intern-submissions/${internId}`, {
+                    headers: { 'Authorization': token }
+                });
+
+                if (response.status === 401) {
+                    logout();
+                    return;
+                }
+
+                const data = await response.json();
+
+                // Switch to submissions tab and display
+                showInternTab('submissions');
+                const container = document.getElementById('submissionsContainer');
+
+                if (data.submissions && data.submissions.length > 0) {
+                    container.innerHTML = `
+                        <h4 style="margin-bottom: 1.5rem; color: #00d4ff;">Submissions by ${internName}</h4>
+                        ${data.submissions.map(sub => `
+                            <div style="background: rgba(255, 255, 255, 0.05); padding: 1.5rem; border-radius: 10px; margin-bottom: 1rem; border-left: 4px solid #00d4ff;">
+                                <div style="display: flex; justify-content: space-between; align-items: start;">
+                                    <div>
+                                        <h4 style="color: #00d4ff; margin-bottom: 0.5rem;">${sub.task_title}</h4>
+                                        <p style="color: #888; font-size: 0.9rem;">
+                                            Week ${sub.week_number} • Submitted: ${new Date(sub.submitted_at).toLocaleString()}
+                                        </p>
+                                        <p style="color: #888; font-size: 0.9rem;">File Type: ${sub.submission_type}</p>
+                                    </div>
+                                    <span style="padding: 0.5rem 1rem; background: rgba(0, 255, 136, 0.2); color: #00ff88; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
+                                        ${sub.status}
+                                    </span>
+                                </div>
+                                ${sub.what_learned ? `
+                                    <div style="margin-top: 1rem; padding: 1rem; background: rgba(0, 255, 136, 0.05); border-radius: 8px;">
+                                        <h5 style="color: #00ff88; margin-bottom: 0.5rem;"><i class="fas fa-lightbulb"></i> What They Learned:</h5>
+                                        <p style="color: #ccc; line-height: 1.6;">${sub.what_learned}</p>
+                                    </div>
+                                ` : ''}
+                                ${sub.submission_file ? `
+                                    <button onclick="viewSubmissionFile('${sub.submission_file}', '${sub.submission_type}')" style="margin-top: 1rem; padding: 0.5rem 1rem; background: #0091ff; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                                        <i class="fas fa-eye"></i> View File
+                                    </button>
+                                ` : ''}
+                            </div>
+                        `).join('')}
+                    `;
+                } else {
+                    container.innerHTML = `<p class="no-data">${internName} hasn't submitted any tasks yet</p>`;
+                }
+            } catch (error) {
+                console.error('Error loading submissions:', error);
+            }
+        }
+
+        function viewSubmissionFile(fileData, fileType) {
+            // Open file in new window
+            const newWindow = window.open();
+            if (fileType === 'pdf') {
+                newWindow.document.write(`<iframe src="${fileData}" width="100%" height="100%" style="border: none;"></iframe>`);
+            } else {
+                newWindow.document.write(`<img src="${fileData}" style="max-width: 100%; height: auto;">`);
+            }
+        }
+
+        function viewInternDashboard(internId) {
+            alert('Dashboard analytics feature coming soon!');
+            // Future: Show detailed analytics, progress charts, etc.
+        }
+
+        // Create weekly task
+        document.getElementById('taskCreationForm')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const token = getCookie('admin_token') || localStorage.getItem('admin_token');
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+
+            const taskData = {
+                week_number: parseInt(document.getElementById('weekNumber').value),
+                task_title: document.getElementById('taskTitle').value,
+                task_description: document.getElementById('taskDescription').value,
+                mini_project_guidelines: document.getElementById('miniProjectGuidelines').value,
+                ds_algo_topic: document.getElementById('dsAlgoTopic').value,
+                ai_news: document.getElementById('aiNews').value,
+                due_date: document.getElementById('dueDate').value
+            };
+
+            try {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+
+                const response = await fetch(`${API_URL}/api/admin/weekly-task`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': token
+                    },
+                    body: JSON.stringify(taskData)
+                });
+
+                if (response.status === 401) {
+                    logout();
+                    return;
+                }
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert('✅ Task created successfully!');
+                    e.target.reset();
+                    loadExistingTasks();
+                } else {
+                    alert('Error: ' + (data.error || 'Failed to create task'));
+                }
+            } catch (error) {
+                console.error('Error creating task:', error);
+                alert('Failed to create task. Check console for details.');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-plus"></i> Create Task';
+            }
+        });
+
+        // Load existing tasks (placeholder)
+        function loadExistingTasks() {
+            document.getElementById('existingTasksContainer').innerHTML = '<p class="no-data">Task list view coming soon</p>';
+        }
+
+        // Load all submissions (placeholder)
+        function loadAllSubmissions() {
+            document.getElementById('submissionsContainer').innerHTML = '<p class="no-data">Select an intern to view their submissions</p>';
+        }
+
+        // Add select intern button to applications
+        function displayJobApplications(applications) {
+            const applicationsSection = document.getElementById('jobApplicationsSection');
+            
+            if (applications.length === 0) {
+                applicationsSection.innerHTML = '<p class="no-data">No job applications yet</p>';
+                return;
+            }
+
+            // Group applications by position
+            const grouped = {};
+            applications.forEach(app => {
+                if (!grouped[app.position]) {
+                    grouped[app.position] = [];
+                }
+                grouped[app.position].push(app);
+            });
+
+            // Display grouped applications
+            let html = '';
+            for (const [position, apps] of Object.entries(grouped)) {
+                html += `
+                    <div class="users-table" style="margin-bottom: 2rem;">
+                        <h3 style="margin-bottom: 1rem;">${position} (${apps.length} applicants)</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>College</th>
+                                    <th>Applied Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${apps.map(app => `
+                                    <tr>
+                                        <td>${app.id}</td>
+                                        <td>${app.full_name}</td>
+                                        <td>${app.email}</td>
+                                        <td>${app.college}</td>
+                                        <td>${new Date(app.applied_at).toLocaleDateString()}</td>
+                                        <td>
+                                            <span style="padding: 0.25rem 0.75rem; background: ${
+                                                app.status === 'selected' ? 'rgba(0, 255, 136, 0.2)' : 
+                                                app.status === 'rejected' ? 'rgba(255, 68, 68, 0.2)' : 
+                                                'rgba(255, 215, 0, 0.2)'
+                                            }; color: ${
+                                                app.status === 'selected' ? '#00ff88' : 
+                                                app.status === 'rejected' ? '#ff4444' : 
+                                                '#ffd700'
+                                            }; border-radius: 12px; font-size: 0.85rem; font-weight: 600;">
+                                                ${app.status}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            ${app.status !== 'selected' ? `
+                                                <button class="select-intern-btn" onclick="selectAsIntern(${app.id}, '${app.full_name}', '${app.email}')">
+                                                    <i class="fas fa-user-check"></i> Select as Intern
+                                                </button>
+                                            ` : `
+                                                <span style="color: #00ff88;"><i class="fas fa-check-circle"></i> Selected</span>
+                                            `}
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+
+            applicationsSection.innerHTML = html;
+        }
+
+        // Select applicant as intern
+        async function selectAsIntern(applicationId, name, email) {
+            if (!confirm(`Select ${name} as an intern?\n\nThey will receive login credentials via email.`)) {
+                return;
+            }
+
+            const token = getCookie('admin_token') || localStorage.getItem('admin_token');
+
+            try {
+                const response = await fetch(`${API_URL}/api/admin/select-intern`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': token
+                    },
+                    body: JSON.stringify({
+                        application_id: applicationId,
+                        default_password: 'Intern@123' // Default password
+                    })
+                });
+
+                if (response.status === 401) {
+                    logout();
+                    return;
+                }
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert(`✅ ${name} has been selected as an intern!\n\nLogin credentials sent to: ${email}\nDefault password: Intern@123`);
+                    loadJobApplications();
+                    loadInterns();
+                } else {
+                    alert('Error: ' + (data.error || 'Failed to select intern'));
+                }
+            } catch (error) {
+                console.error('Error selecting intern:', error);
+                alert('Failed to select intern. Check console for details.');
+            }
+        }
     </script>
 </body>
 </html>

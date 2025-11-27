@@ -224,6 +224,149 @@ def init_db():
             )
         ''')
     
+    # Selected Interns table - interns who get dashboard access
+    if USE_POSTGRES:
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS selected_interns (
+                id SERIAL PRIMARY KEY,
+                application_id INTEGER REFERENCES applications(id),
+                full_name VARCHAR(255) NOT NULL,
+                email VARCHAR(255) UNIQUE NOT NULL,
+                password_hash VARCHAR(255) NOT NULL,
+                position VARCHAR(255) NOT NULL,
+                college VARCHAR(255) NOT NULL,
+                start_date DATE DEFAULT CURRENT_DATE,
+                status VARCHAR(50) DEFAULT 'active',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+    else:
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS selected_interns (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                application_id INTEGER,
+                full_name TEXT NOT NULL,
+                email TEXT UNIQUE NOT NULL,
+                password_hash TEXT NOT NULL,
+                position TEXT NOT NULL,
+                college TEXT NOT NULL,
+                start_date DATE DEFAULT CURRENT_DATE,
+                status TEXT DEFAULT 'active',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (application_id) REFERENCES applications (id)
+            )
+        ''')
+    
+    # Weekly Tasks table - preloaded by admin
+    if USE_POSTGRES:
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS weekly_tasks (
+                id SERIAL PRIMARY KEY,
+                week_number INTEGER NOT NULL,
+                task_title VARCHAR(255) NOT NULL,
+                task_description TEXT NOT NULL,
+                mini_project_guidelines TEXT,
+                ds_algo_topic VARCHAR(255),
+                ai_news TEXT,
+                due_date DATE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+    else:
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS weekly_tasks (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                week_number INTEGER NOT NULL,
+                task_title TEXT NOT NULL,
+                task_description TEXT NOT NULL,
+                mini_project_guidelines TEXT,
+                ds_algo_topic TEXT,
+                ai_news TEXT,
+                due_date DATE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+    
+    # Task Submissions table - intern uploads
+    if USE_POSTGRES:
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS task_submissions (
+                id SERIAL PRIMARY KEY,
+                intern_id INTEGER NOT NULL REFERENCES selected_interns(id),
+                task_id INTEGER NOT NULL REFERENCES weekly_tasks(id),
+                submission_file TEXT,
+                submission_type VARCHAR(50),
+                what_learned TEXT,
+                submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                status VARCHAR(50) DEFAULT 'submitted'
+            )
+        ''')
+    else:
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS task_submissions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                intern_id INTEGER NOT NULL,
+                task_id INTEGER NOT NULL,
+                submission_file TEXT,
+                submission_type TEXT,
+                what_learned TEXT,
+                submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                status TEXT DEFAULT 'submitted',
+                FOREIGN KEY (intern_id) REFERENCES selected_interns (id),
+                FOREIGN KEY (task_id) REFERENCES weekly_tasks (id)
+            )
+        ''')
+    
+    # Intern Progress Tracking
+    if USE_POSTGRES:
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS intern_progress (
+                id SERIAL PRIMARY KEY,
+                intern_id INTEGER NOT NULL REFERENCES selected_interns(id),
+                week_number INTEGER NOT NULL,
+                tasks_completed INTEGER DEFAULT 0,
+                tasks_total INTEGER DEFAULT 0,
+                performance_notes TEXT,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+    else:
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS intern_progress (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                intern_id INTEGER NOT NULL,
+                week_number INTEGER NOT NULL,
+                tasks_completed INTEGER DEFAULT 0,
+                tasks_total INTEGER DEFAULT 0,
+                performance_notes TEXT,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (intern_id) REFERENCES selected_interns (id)
+            )
+        ''')
+    
+    # Intern Sessions table for authentication
+    if USE_POSTGRES:
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS intern_sessions (
+                id SERIAL PRIMARY KEY,
+                intern_id INTEGER NOT NULL REFERENCES selected_interns(id),
+                token VARCHAR(255) UNIQUE NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+    else:
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS intern_sessions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                intern_id INTEGER NOT NULL,
+                token TEXT UNIQUE NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (intern_id) REFERENCES selected_interns (id)
+            )
+        ''')
+    
     conn.commit()
     conn.close()
     print("✅ Database initialized successfully!")
@@ -1191,6 +1334,587 @@ def check_database():
     except Exception as e:
         print(f"Error checking database: {e}")
         return jsonify({'error': str(e)}), 500
+
+# ============================================================
+# INTERN MANAGEMENT SYSTEM
+# ============================================================
+
+# Intern session management
+intern_sessions = {}
+
+def verify_intern_token(token):
+    """Verify intern authentication token"""
+    if not token:
+        return None
+    return intern_sessions.get(token)
+
+# INTERN LOGIN & AUTHENTICATION
+
+@app.route('/intern/login')
+def intern_login_page():
+    """Serve intern login page"""
+    return send_from_directory('.', 'intern-login.html')
+
+@app.route('/intern/dashboard')
+def intern_dashboard_page():
+    """Serve intern dashboard page"""
+    return send_from_directory('.', 'intern-dashboard.html')
+
+@app.route('/api/intern/login', methods=['POST'])
+def intern_login():
+    """Intern login endpoint"""
+    try:
+        data = request.json
+        email = data.get('email')
+        password = data.get('password')
+        
+        if not email or not password:
+            return jsonify({'error': 'Email and password required'}), 400
+        
+        password_hash = hash_password(password)
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Check if intern exists and password matches
+        if USE_POSTGRES:
+            cursor.execute('''
+                SELECT id, full_name, email, position, college, status 
+                FROM selected_interns 
+                WHERE email = %s AND password_hash = %s
+            ''', (email, password_hash))
+        else:
+            cursor.execute('''
+                SELECT id, full_name, email, position, college, status 
+                FROM selected_interns 
+                WHERE email = ? AND password_hash = ?
+            ''', (email, password_hash))
+        
+        intern = cursor.fetchone()
+        
+        if not intern:
+            conn.close()
+            return jsonify({'error': 'Invalid email or password'}), 401
+        
+        intern_id = intern[0]
+        
+        # Check if intern is active
+        if intern[5] != 'active':
+            conn.close()
+            return jsonify({'error': 'Account is not active'}), 403
+        
+        # Create session token
+        token = secrets.token_hex(32)
+        
+        # Store in database
+        if USE_POSTGRES:
+            cursor.execute('''
+                INSERT INTO intern_sessions (intern_id, token)
+                VALUES (%s, %s)
+            ''', (intern_id, token))
+        else:
+            cursor.execute('''
+                INSERT INTO intern_sessions (intern_id, token)
+                VALUES (?, ?)
+            ''', (intern_id, token))
+        
+        conn.commit()
+        conn.close()
+        
+        # Store in memory
+        intern_sessions[token] = {
+            'intern_id': intern_id,
+            'email': intern[2],
+            'name': intern[1],
+            'position': intern[3]
+        }
+        
+        return jsonify({
+            'success': True,
+            'token': token,
+            'intern': {
+                'id': intern_id,
+                'name': intern[1],
+                'email': intern[2],
+                'position': intern[3],
+                'college': intern[4]
+            }
+        }), 200
+        
+    except Exception as e:
+        print(f"❌ Intern login error: {e}")
+        return jsonify({'error': 'Login failed'}), 500
+
+@app.route('/api/intern/logout', methods=['POST'])
+def intern_logout():
+    """Intern logout endpoint"""
+    try:
+        token = request.cookies.get('intern_token') or request.headers.get('Authorization')
+        
+        if token and token in intern_sessions:
+            # Remove from memory
+            del intern_sessions[token]
+            
+            # Remove from database
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            
+            if USE_POSTGRES:
+                cursor.execute('DELETE FROM intern_sessions WHERE token = %s', (token,))
+            else:
+                cursor.execute('DELETE FROM intern_sessions WHERE token = ?', (token,))
+            
+            conn.commit()
+            conn.close()
+        
+        return jsonify({'success': True}), 200
+    except Exception as e:
+        print(f"❌ Logout error: {e}")
+        return jsonify({'error': 'Logout failed'}), 500
+
+# INTERN DASHBOARD APIs
+
+@app.route('/api/intern/dashboard', methods=['GET'])
+def get_intern_dashboard():
+    """Get intern dashboard data"""
+    try:
+        token = request.cookies.get('intern_token') or request.headers.get('Authorization')
+        intern_data = verify_intern_token(token)
+        
+        if not intern_data:
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        intern_id = intern_data['intern_id']
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Get current week number (calculate from start date)
+        if USE_POSTGRES:
+            cursor.execute('''
+                SELECT EXTRACT(WEEK FROM CURRENT_DATE) - EXTRACT(WEEK FROM start_date) + 1 as current_week
+                FROM selected_interns
+                WHERE id = %s
+            ''', (intern_id,))
+        else:
+            cursor.execute('''
+                SELECT (julianday('now') - julianday(start_date)) / 7 + 1 as current_week
+                FROM selected_interns
+                WHERE id = ?
+            ''', (intern_id,))
+        
+        result = cursor.fetchone()
+        current_week = int(result[0]) if result else 1
+        
+        # Get all tasks for current week
+        if USE_POSTGRES:
+            cursor.execute('''
+                SELECT id, week_number, task_title, task_description, 
+                       mini_project_guidelines, ds_algo_topic, ai_news, due_date
+                FROM weekly_tasks
+                WHERE week_number = %s
+                ORDER BY id
+            ''', (current_week,))
+        else:
+            cursor.execute('''
+                SELECT id, week_number, task_title, task_description, 
+                       mini_project_guidelines, ds_algo_topic, ai_news, due_date
+                FROM weekly_tasks
+                WHERE week_number = ?
+                ORDER BY id
+            ''', (current_week,))
+        
+        tasks = cursor.fetchall()
+        
+        # Get submission history
+        if USE_POSTGRES:
+            cursor.execute('''
+                SELECT ts.id, wt.task_title, wt.week_number, ts.submission_type, 
+                       ts.submitted_at, ts.status, ts.what_learned
+                FROM task_submissions ts
+                JOIN weekly_tasks wt ON ts.task_id = wt.id
+                WHERE ts.intern_id = %s
+                ORDER BY ts.submitted_at DESC
+                LIMIT 10
+            ''', (intern_id,))
+        else:
+            cursor.execute('''
+                SELECT ts.id, wt.task_title, wt.week_number, ts.submission_type, 
+                       ts.submitted_at, ts.status, ts.what_learned
+                FROM task_submissions ts
+                JOIN weekly_tasks wt ON ts.task_id = wt.id
+                WHERE ts.intern_id = ?
+                ORDER BY ts.submitted_at DESC
+                LIMIT 10
+            ''', (intern_id,))
+        
+        submissions = cursor.fetchall()
+        
+        # Get progress stats
+        if USE_POSTGRES:
+            cursor.execute('''
+                SELECT tasks_completed, tasks_total
+                FROM intern_progress
+                WHERE intern_id = %s AND week_number = %s
+            ''', (intern_id, current_week))
+        else:
+            cursor.execute('''
+                SELECT tasks_completed, tasks_total
+                FROM intern_progress
+                WHERE intern_id = ? AND week_number = ?
+            ''', (intern_id, current_week))
+        
+        progress = cursor.fetchone()
+        
+        conn.close()
+        
+        return jsonify({
+            'intern': intern_data,
+            'current_week': current_week,
+            'tasks': [{
+                'id': t[0],
+                'week_number': t[1],
+                'title': t[2],
+                'description': t[3],
+                'mini_project_guidelines': t[4],
+                'ds_algo_topic': t[5],
+                'ai_news': t[6],
+                'due_date': str(t[7]) if t[7] else None
+            } for t in tasks],
+            'submissions': [{
+                'id': s[0],
+                'task_title': s[1],
+                'week_number': s[2],
+                'submission_type': s[3],
+                'submitted_at': str(s[4]),
+                'status': s[5],
+                'what_learned': s[6]
+            } for s in submissions],
+            'progress': {
+                'completed': progress[0] if progress else 0,
+                'total': progress[1] if progress else len(tasks)
+            }
+        }), 200
+        
+    except Exception as e:
+        print(f"❌ Error fetching dashboard: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/intern/submit-task', methods=['POST'])
+def submit_task():
+    """Submit a task with file upload"""
+    try:
+        token = request.cookies.get('intern_token') or request.headers.get('Authorization')
+        intern_data = verify_intern_token(token)
+        
+        if not intern_data:
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        data = request.json
+        task_id = data.get('task_id')
+        submission_file = data.get('submission_file')  # Base64 encoded file
+        submission_type = data.get('submission_type', 'pdf')
+        what_learned = data.get('what_learned', '')
+        
+        if not task_id:
+            return jsonify({'error': 'Task ID required'}), 400
+        
+        intern_id = intern_data['intern_id']
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Insert submission
+        if USE_POSTGRES:
+            cursor.execute('''
+                INSERT INTO task_submissions (intern_id, task_id, submission_file, submission_type, what_learned)
+                VALUES (%s, %s, %s, %s, %s)
+                RETURNING id
+            ''', (intern_id, task_id, submission_file, submission_type, what_learned))
+            submission_id = cursor.fetchone()[0]
+        else:
+            cursor.execute('''
+                INSERT INTO task_submissions (intern_id, task_id, submission_file, submission_type, what_learned)
+                VALUES (?, ?, ?, ?, ?)
+            ''', (intern_id, task_id, submission_file, submission_type, what_learned))
+            submission_id = cursor.lastrowid
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'submission_id': submission_id,
+            'message': 'Task submitted successfully!'
+        }), 200
+        
+    except Exception as e:
+        print(f"❌ Error submitting task: {e}")
+        return jsonify({'error': str(e)}), 500
+
+# ADMIN INTERN MANAGEMENT APIs
+
+@app.route('/api/admin/select-intern', methods=['POST'])
+def select_intern():
+    """Admin selects an applicant to become an intern"""
+    try:
+        token = request.cookies.get('admin_token') or request.headers.get('Authorization')
+        if not verify_admin_token(token):
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        data = request.json
+        application_id = data.get('application_id')
+        default_password = data.get('default_password', 'Intern@123')
+        
+        if not application_id:
+            return jsonify({'error': 'Application ID required'}), 400
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Get application details
+        if USE_POSTGRES:
+            cursor.execute('''
+                SELECT full_name, email, position, college
+                FROM applications
+                WHERE id = %s
+            ''', (application_id,))
+        else:
+            cursor.execute('''
+                SELECT full_name, email, position, college
+                FROM applications
+                WHERE id = ?
+            ''', (application_id,))
+        
+        application = cursor.fetchone()
+        
+        if not application:
+            conn.close()
+            return jsonify({'error': 'Application not found'}), 404
+        
+        # Create intern account
+        password_hash = hash_password(default_password)
+        
+        if USE_POSTGRES:
+            cursor.execute('''
+                INSERT INTO selected_interns (application_id, full_name, email, password_hash, position, college)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                RETURNING id
+            ''', (application_id, application[0], application[1], password_hash, application[2], application[3]))
+            intern_id = cursor.fetchone()[0]
+            
+            # Update application status
+            cursor.execute('''
+                UPDATE applications
+                SET status = %s
+                WHERE id = %s
+            ''', ('selected', application_id))
+        else:
+            cursor.execute('''
+                INSERT INTO selected_interns (application_id, full_name, email, password_hash, position, college)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (application_id, application[0], application[1], password_hash, application[2], application[3]))
+            intern_id = cursor.lastrowid
+            
+            # Update application status
+            cursor.execute('''
+                UPDATE applications
+                SET status = ?
+                WHERE id = ?
+            ''', ('selected', application_id))
+        
+        conn.commit()
+        conn.close()
+        
+        # Send welcome email to intern
+        send_intern_welcome_email(application[1], application[0], default_password)
+        
+        return jsonify({
+            'success': True,
+            'intern_id': intern_id,
+            'message': f'Intern account created for {application[0]}'
+        }), 200
+        
+    except Exception as e:
+        print(f"❌ Error selecting intern: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/admin/interns', methods=['GET'])
+def get_all_interns():
+    """Get all selected interns (admin only)"""
+    try:
+        token = request.cookies.get('admin_token') or request.headers.get('Authorization')
+        if not verify_admin_token(token):
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            SELECT id, full_name, email, position, college, start_date, status, created_at
+            FROM selected_interns
+            ORDER BY created_at DESC
+        ''')
+        
+        interns = cursor.fetchall()
+        conn.close()
+        
+        return jsonify({
+            'interns': [{
+                'id': i[0],
+                'name': i[1],
+                'email': i[2],
+                'position': i[3],
+                'college': i[4],
+                'start_date': str(i[5]) if i[5] else None,
+                'status': i[6],
+                'created_at': str(i[7])
+            } for i in interns]
+        }), 200
+        
+    except Exception as e:
+        print(f"❌ Error fetching interns: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/admin/weekly-task', methods=['POST'])
+def create_weekly_task():
+    """Admin creates a weekly task"""
+    try:
+        token = request.cookies.get('admin_token') or request.headers.get('Authorization')
+        if not verify_admin_token(token):
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        data = request.json
+        week_number = data.get('week_number')
+        task_title = data.get('task_title')
+        task_description = data.get('task_description')
+        mini_project_guidelines = data.get('mini_project_guidelines', '')
+        ds_algo_topic = data.get('ds_algo_topic', '')
+        ai_news = data.get('ai_news', '')
+        due_date = data.get('due_date')
+        
+        if not all([week_number, task_title, task_description]):
+            return jsonify({'error': 'Week number, title, and description required'}), 400
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        if USE_POSTGRES:
+            cursor.execute('''
+                INSERT INTO weekly_tasks (week_number, task_title, task_description, 
+                                         mini_project_guidelines, ds_algo_topic, ai_news, due_date)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                RETURNING id
+            ''', (week_number, task_title, task_description, mini_project_guidelines, 
+                  ds_algo_topic, ai_news, due_date))
+            task_id = cursor.fetchone()[0]
+        else:
+            cursor.execute('''
+                INSERT INTO weekly_tasks (week_number, task_title, task_description, 
+                                         mini_project_guidelines, ds_algo_topic, ai_news, due_date)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', (week_number, task_title, task_description, mini_project_guidelines, 
+                  ds_algo_topic, ai_news, due_date))
+            task_id = cursor.lastrowid
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'task_id': task_id,
+            'message': 'Weekly task created successfully!'
+        }), 200
+        
+    except Exception as e:
+        print(f"❌ Error creating task: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/admin/intern-submissions/<int:intern_id>', methods=['GET'])
+def get_intern_submissions(intern_id):
+    """Get all submissions for a specific intern (admin only)"""
+    try:
+        token = request.cookies.get('admin_token') or request.headers.get('Authorization')
+        if not verify_admin_token(token):
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        if USE_POSTGRES:
+            cursor.execute('''
+                SELECT ts.id, wt.task_title, wt.week_number, ts.submission_type, 
+                       ts.submission_file, ts.what_learned, ts.submitted_at, ts.status
+                FROM task_submissions ts
+                JOIN weekly_tasks wt ON ts.task_id = wt.id
+                WHERE ts.intern_id = %s
+                ORDER BY ts.submitted_at DESC
+            ''', (intern_id,))
+        else:
+            cursor.execute('''
+                SELECT ts.id, wt.task_title, wt.week_number, ts.submission_type, 
+                       ts.submission_file, ts.what_learned, ts.submitted_at, ts.status
+                FROM task_submissions ts
+                JOIN weekly_tasks wt ON ts.task_id = wt.id
+                WHERE ts.intern_id = ?
+                ORDER BY ts.submitted_at DESC
+            ''', (intern_id,))
+        
+        submissions = cursor.fetchall()
+        conn.close()
+        
+        return jsonify({
+            'submissions': [{
+                'id': s[0],
+                'task_title': s[1],
+                'week_number': s[2],
+                'submission_type': s[3],
+                'submission_file': s[4],
+                'what_learned': s[5],
+                'submitted_at': str(s[6]),
+                'status': s[7]
+            } for s in submissions]
+        }), 200
+        
+    except Exception as e:
+        print(f"❌ Error fetching submissions: {e}")
+        return jsonify({'error': str(e)}), 500
+
+def send_intern_welcome_email(email, name, password):
+    """Send welcome email to selected intern"""
+    try:
+        email_body = f"""
+Hi {name},
+
+Congratulations! You have been selected for the internship program at XGENAI! 🎉
+
+Your intern dashboard credentials:
+Email: {email}
+Password: {password}
+
+Please login at: {os.getenv('APP_URL', 'http://localhost:5000')}/intern/login
+
+IMPORTANT: Please change your password after first login.
+
+You will find your weekly tasks, assignments, and progress tracking in your dashboard.
+
+Welcome to the team!
+
+Best regards,
+XGENAI Team
+        """
+        
+        subject = '🎉 Welcome to XGENAI Internship Program!'
+        
+        if IS_PRODUCTION:
+            send_email_mailgun(email, subject, email_body)
+        else:
+            print(f"📧 Welcome email logged for: {email}")
+        
+        return True
+    except Exception as e:
+        print(f"❌ Error sending welcome email: {e}")
+        return False
 
 if __name__ == '__main__':
     # Initialize database
