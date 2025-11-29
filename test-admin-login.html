@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Login Test</title>
+</head>
+<body>
+    <h1>Admin Login Diagnostic</h1>
+    <div id="results"></div>
+    
+    <script>
+        const API_URL = 'https://xgenai.onrender.com';
+        const results = document.getElementById('results');
+        
+        async function testLogin() {
+            results.innerHTML += '<p>Testing admin login...</p>';
+            
+            try {
+                const response = await fetch(`${API_URL}/api/admin/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: 'admin@xgenai.com',
+                        password: 'Admin@123'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                results.innerHTML += `<p>Status: ${response.status}</p>`;
+                results.innerHTML += `<p>Response: ${JSON.stringify(data, null, 2)}</p>`;
+                
+                if (response.ok && data.success) {
+                    results.innerHTML += '<p style="color: green;">✅ Login successful!</p>';
+                    results.innerHTML += `<p>Token: ${data.token}</p>`;
+                } else {
+                    results.innerHTML += `<p style="color: red;">❌ Login failed: ${data.error}</p>`;
+                }
+            } catch (error) {
+                results.innerHTML += `<p style="color: red;">❌ Error: ${error.message}</p>`;
+            }
+        }
+        
+        testLogin();
+    </script>
+</body>
+</html>
