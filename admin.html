@@ -1155,6 +1155,19 @@
                 alert('Failed to select intern. Check console for details.');
             }
         }
+
+        // Initialize dashboard on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const token = checkAuth();
+            if (!token) return;
+
+            // Load all dashboard data
+            loadDashboard();
+            loadJobApplications();
+            loadInterns();
+
+            console.log('✅ Admin dashboard initialized and data loaded');
+        });
     </script>
 </body>
 </html>
