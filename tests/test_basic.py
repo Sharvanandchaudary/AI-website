@@ -207,28 +207,43 @@ class TestJobApplications:
         assert response.status_code == 400
     
     def test_complete_application_submission(self, client):
-        """Test submitting complete job application"""
+        """Test submitting complete job application with all required fields"""
         timestamp = datetime.now().timestamp()
         application = {
             'position': 'AI/ML Intern',
             'fullName': f'Test Applicant {timestamp}',
             'email': f'applicant{timestamp}@test.com',
             'phone': '1234567890',
-            'address': '123 Test St, Test City',
+            'address': '123 Test St, Test City, TC 12345',
             'college': 'Test University',
-            'degree': 'Computer Science',
+            'degree': 'B.Tech in Computer Science',
             'semester': '5',
-            'year': '3',
-            'graduationYear': '2025',
-            'linkedin': 'https://linkedin.com/in/test',
-            'github': 'https://github.com/test',
-            'portfolio': 'https://test.com',
-            'about': 'Test about section',
+            'year': '2025',
+            'about': 'I am a passionate computer science student with strong skills in AI/ML, Python, and data structures. I have completed several projects in machine learning and am eager to contribute to real-world AI applications at XGENAI.',
             'resumeName': 'test-resume.pdf',
-            'resume': 'data:application/pdf;base64,test',
-            'coverLetter': 'Test cover letter',
-            'whyJoin': 'Test reason',
-            'achievements': 'Test achievements'
+            'linkedin': 'https://linkedin.com/in/testapplicant',
+            'github': 'https://github.com/testapplicant'
+        }
+        response = client.post('/api/applications', json=application)
+        assert response.status_code in [200, 201], f"Expected 200/201 but got {response.status_code}: {response.get_json()}"
+        data = response.get_json()
+        assert 'message' in data or 'success' in data
+    
+    def test_application_with_minimal_required_fields(self, client):
+        """Test application with only required fields (no optional fields)"""
+        timestamp = datetime.now().timestamp()
+        application = {
+            'position': 'Software Developer Intern',
+            'fullName': f'Minimal Test {timestamp}',
+            'email': f'minimal{timestamp}@test.com',
+            'phone': '9876543210',
+            'address': '456 Test Ave',
+            'college': 'Test College',
+            'degree': 'BCA',
+            'semester': '3',
+            'year': '2026',
+            'about': 'Test application',
+            'resumeName': 'resume.pdf'
         }
         response = client.post('/api/applications', json=application)
         assert response.status_code in [200, 201]

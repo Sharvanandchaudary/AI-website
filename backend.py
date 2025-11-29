@@ -575,7 +575,20 @@ def apply_page():
     response = send_from_directory('pages', 'apply.html')
     return add_security_headers(response)
 
-# ADMIN PORTAL - Primary URL
+# NEW SEPARATE ADMIN PORTAL - Complete isolation
+@app.route('/xgenai-admin')
+def xgenai_admin_login():
+    """Serve new separate admin login page"""
+    response = send_from_directory('.', 'xgenai-admin-login.html')
+    return add_security_headers(response)
+
+@app.route('/xgenai-admin-dashboard')
+def xgenai_admin_dashboard():
+    """Serve new separate admin dashboard"""
+    response = send_from_directory('.', 'xgenai-admin-dashboard.html')
+    return add_security_headers(response)
+
+# OLD ADMIN PORTAL (kept for backward compatibility)
 @app.route('/admin')
 def admin_page():
     """Serve admin authentication portal"""
