@@ -1364,7 +1364,7 @@ def get_all_applications():
         
         cursor.execute('''
             SELECT id, position, full_name, email, phone, college, semester, 
-                   year, status, applied_at, linkedin, github
+                   year, status, applied_at, linkedin, github, address, degree, about, resume_name
             FROM applications
             ORDER BY applied_at DESC
         ''')
@@ -1383,7 +1383,11 @@ def get_all_applications():
                 'status': row[8],
                 'appliedAt': row[9],
                 'linkedin': row[10],
-                'github': row[11]
+                'github': row[11],
+                'address': row[12],
+                'degree': row[13],
+                'about': row[14],
+                'resumeName': row[15]
             })
         
         conn.close()
