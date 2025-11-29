@@ -543,7 +543,13 @@ def admin_page():
 @app.route('/<path:path>')
 def serve_static(path):
     """Serve static files"""
-    return send_from_directory('.', path)
+    response = send_from_directory('.', path)
+    # Add no-cache headers for HTML and CSS files
+    if path.endswith(('.html', '.css', '.js')):
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+    return response
 
 @app.route('/api/signup', methods=['POST'])
 def signup():
