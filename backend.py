@@ -956,12 +956,30 @@ def get_stats():
             print(f"Error fetching today's users: {e}")
             today_users = 0
         
+        try:
+            # Total applications
+            cursor.execute('SELECT COUNT(*) FROM applications')
+            total_applications = cursor.fetchone()[0]
+        except Exception as e:
+            print(f"Error fetching applications count: {e}")
+            total_applications = 0
+        
+        try:
+            # Active interns
+            cursor.execute("SELECT COUNT(*) FROM selected_interns WHERE status = 'active'" if not USE_POSTGRES else "SELECT COUNT(*) FROM selected_interns WHERE status = 'active'")
+            active_interns = cursor.fetchone()[0]
+        except Exception as e:
+            print(f"Error fetching active interns: {e}")
+            active_interns = 0
+        
         conn.close()
         
         return jsonify({
             'total_users': total_users,
             'total_emails': total_emails,
-            'today_users': today_users
+            'today_users': today_users,
+            'total_applications': total_applications,
+            'active_interns': active_interns
         }), 200
         
     except Exception as e:
@@ -1278,12 +1296,17 @@ Best regards,
 XGENAI Recruitment Team
         """
         
-        send_email_mailgun(data['email'], f"Application Received - {data['position']}", email_body)
+        # Send confirmation email (only in production if Mailgun is configured)
+        if IS_PRODUCTION and MAILGUN_API_KEY and MAILGUN_DOMAIN:
+            send_email_mailgun(data['email'], f"Application Received - {data['position']}", email_body)
+        else:
+            print(f"📧 Email would be sent to: {data['email']} (Mailgun not configured)")
         
         print(f"✅ Application submitted successfully for {data['fullName']}")
         
         return jsonify({
-            'message': 'Application submitted successfully!',
+            'success': True,
+            'message': 'Application submitted successfully! We will contact you soon.',
             'application_id': application_id
         }), 201
         
