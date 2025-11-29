@@ -444,6 +444,12 @@
         .btn-primary {
             background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
             color: white;
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-primary i {
+            font-size: 16px;
+            margin-right: 6px;
         }
 
         .btn-primary:hover {
@@ -457,6 +463,12 @@
             color: white;
             font-weight: 700;
             padding: 10px 24px;
+            box-shadow: 0 3px 12px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-success i {
+            font-size: 18px;
+            margin-right: 8px;
         }
 
         .btn-success:hover {
@@ -975,11 +987,11 @@
                                         <i class="fas fa-eye"></i> View
                                     </button>
                                     ${app.status === 'pending' ? 
-                                        `<button class="btn btn-success" style="font-size: 13px; padding: 9px 18px; font-weight: 700;" onclick="selectIntern(${app.id}, '${fullName.replace(/'/g, "\\'")}', '${app.email}', '${app.position}', '${app.college}')">
-                                            <i class="fas fa-check-circle"></i> SELECT
+                                        `<button class="btn btn-success" style="font-size: 14px; padding: 11px 22px; font-weight: 700;" onclick="selectIntern(${app.id}, '${fullName.replace(/'/g, "\\'")}', '${app.email}', '${app.position}', '${app.college}')">
+                                            <i class="fas fa-check-circle" style="font-size: 18px; margin-right: 8px;"></i> SELECT
                                         </button>` : 
                                         app.status === 'selected' ? 
-                                        `<span style="color: #10b981; font-size: 12px;"><i class="fas fa-check"></i> Selected</span>` :
+                                        `<span style="color: #10b981; font-size: 13px; font-weight: 600;"><i class="fas fa-check-circle" style="font-size: 16px; margin-right: 4px;"></i> Selected</span>` :
                                         `<span style="color: #ef4444; font-size: 12px;"><i class="fas fa-times"></i> Rejected</span>`}
                                 </td>
                             </tr>`;
@@ -1051,7 +1063,7 @@
                         <div style="display: flex; gap: 10px; margin-top: 25px;">
                             ${app.status === 'pending' ? 
                                 `<button class="btn btn-success" onclick="selectIntern(${app.id}, '${fullName.replace(/'/g, "\\'")}', '${app.email}', '${app.position}', '${app.college}'); document.getElementById('appDetailModal').remove();">
-                                    <i class="fas fa-check"></i> Select as Intern
+                                    <i class="fas fa-check-circle" style="font-size: 17px; margin-right: 7px;"></i> Select as Intern
                                 </button>
                                 <button class="btn btn-danger" onclick="updateApplicationStatus(${app.id}, 'rejected'); document.getElementById('appDetailModal').remove();">
                                     <i class="fas fa-times"></i> Reject
