@@ -366,20 +366,38 @@
         const API_URL = window.location.origin;
         let authToken = null;
 
+        console.log('Admin page loaded, API URL:', API_URL);
+
+        // Check if already logged in
+        window.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded');
+            const savedToken = localStorage.getItem('admin_token');
+            if (savedToken) {
+                console.log('Found saved token, loading dashboard');
+                authToken = savedToken;
+                showDashboard();
+                loadAllData();
+            }
+        });
+
         // Login Handler
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            console.log('Login form submitted');
             
             const email = document.getElementById('loginEmail').value;
             const password = document.getElementById('loginPassword').value;
             const loginBtn = document.getElementById('loginBtn');
             const errorEl = document.getElementById('loginError');
 
+            console.log('Email:', email);
+
             loginBtn.disabled = true;
             loginBtn.textContent = 'Logging in...';
             errorEl.style.display = 'none';
 
             try {
+                console.log('Sending login request to:', `${API_URL}/api/admin/login`);
                 const response = await fetch(`${API_URL}/api/admin/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -387,20 +405,24 @@
                 });
 
                 const data = await response.json();
+                console.log('Login response:', data);
 
                 if (response.ok && data.success) {
                     authToken = data.token;
                     localStorage.setItem('admin_token', data.token);
+                    console.log('Login successful, showing dashboard');
                     showDashboard();
                     loadAllData();
                 } else {
+                    console.error('Login failed:', data.error);
                     errorEl.textContent = data.error || 'Login failed';
                     errorEl.style.display = 'block';
                     loginBtn.disabled = false;
                     loginBtn.textContent = 'Login to Dashboard';
                 }
             } catch (error) {
-                errorEl.textContent = 'Connection error. Please try again.';
+                console.error('Login error:', error);
+                errorEl.textContent = 'Connection error: ' + error.message;
                 errorEl.style.display = 'block';
                 loginBtn.disabled = false;
                 loginBtn.textContent = 'Login to Dashboard';
@@ -635,14 +657,6 @@
             } catch (error) {
                 document.getElementById('emailsContent').innerHTML = '<p>Error loading emails</p>';
             }
-        }
-
-        // Check if already logged in
-        const savedToken = localStorage.getItem('admin_token');
-        if (savedToken) {
-            authToken = savedToken;
-            showDashboard();
-            loadAllData();
         }
     </script>
 </body>
