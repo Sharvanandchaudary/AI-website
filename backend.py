@@ -747,7 +747,10 @@ def admin_login():
 def admin_logout():
     """Admin logout endpoint"""
     try:
-        token = request.cookies.get('admin_token') or request.headers.get('Authorization')
+        token = request.cookies.get('admin_token') or request.headers.get('Authorization', '')
+        # Strip 'Bearer ' prefix if present
+        if token.startswith('Bearer '):
+            token = token[7:]
         if token and token in admin_sessions:
             del admin_sessions[token]
         return jsonify({'success': True}), 200
@@ -758,7 +761,10 @@ def admin_logout():
 def admin_verify():
     """Verify admin authentication token"""
     try:
-        token = request.cookies.get('admin_token') or request.headers.get('Authorization')
+        token = request.cookies.get('admin_token') or request.headers.get('Authorization', '')
+        # Strip 'Bearer ' prefix if present
+        if token.startswith('Bearer '):
+            token = token[7:]
         if verify_admin_token(token):
             session_data = admin_sessions.get(token, {})
             return jsonify({
@@ -850,7 +856,10 @@ def get_users():
     """Get all users (admin only - requires authentication)"""
     try:
         # Verify admin authentication
-        token = request.cookies.get('admin_token') or request.headers.get('Authorization')
+        token = request.cookies.get('admin_token') or request.headers.get('Authorization', '')
+        # Strip 'Bearer ' prefix if present
+        if token.startswith('Bearer '):
+            token = token[7:]
         if not verify_admin_token(token):
             return jsonify({'error': 'Unauthorized'}), 401
         
@@ -886,7 +895,10 @@ def get_emails():
     """Get all sent emails (admin only - requires authentication)"""
     try:
         # Verify admin authentication
-        token = request.cookies.get('admin_token') or request.headers.get('Authorization')
+        token = request.cookies.get('admin_token') or request.headers.get('Authorization', '')
+        # Strip 'Bearer ' prefix if present
+        if token.startswith('Bearer '):
+            token = token[7:]
         if not verify_admin_token(token):
             return jsonify({'error': 'Unauthorized'}), 401
         
@@ -922,7 +934,10 @@ def get_stats():
     """Get statistics (admin only - requires authentication)"""
     try:
         # Verify admin authentication
-        token = request.cookies.get('admin_token') or request.headers.get('Authorization')
+        token = request.cookies.get('admin_token') or request.headers.get('Authorization', '')
+        # Strip 'Bearer ' prefix if present
+        if token.startswith('Bearer '):
+            token = token[7:]
         if not verify_admin_token(token):
             return jsonify({'error': 'Unauthorized'}), 401
         
@@ -1152,14 +1167,14 @@ def get_all_admin_data():
     """Get all users with their projects (admin only)"""
     try:
         # Get token from Authorization header (optional for development)
-        auth_header = request.headers.get('Authorization')
+        auth_header = request.headers.get('Authorization', '')
         
         # For development: allow access without token
         # Comment out these lines for production
         if not auth_header or not auth_header.startswith('Bearer '):
             pass  # Allow access for development
         elif auth_header:
-            token = auth_header.split(' ')[1]
+            token = auth_header[7:]  # Strip 'Bearer ' prefix
             user_id = verify_token(token)
             # Token validation is optional for now
         
@@ -1330,7 +1345,10 @@ def get_all_applications():
     
     try:
         # Verify admin authentication
-        token = request.cookies.get('admin_token') or request.headers.get('Authorization')
+        token = request.cookies.get('admin_token') or request.headers.get('Authorization', '')
+        # Strip 'Bearer ' prefix if present
+        if token.startswith('Bearer '):
+            token = token[7:]
         if not verify_admin_token(token):
             return jsonify({'error': 'Unauthorized'}), 401
         
@@ -1373,7 +1391,10 @@ def update_application_status(app_id):
     """Update application status (admin only - requires authentication)"""
     try:
         # Verify admin authentication
-        token = request.cookies.get('admin_token') or request.headers.get('Authorization')
+        token = request.cookies.get('admin_token') or request.headers.get('Authorization', '')
+        # Strip 'Bearer ' prefix if present
+        if token.startswith('Bearer '):
+            token = token[7:]
         if not verify_admin_token(token):
             return jsonify({'error': 'Unauthorized'}), 401
         
@@ -1417,7 +1438,10 @@ def send_application_email():
     """Send email to candidate about application status (admin only - requires authentication)"""
     try:
         # Verify admin authentication
-        token = request.cookies.get('admin_token') or request.headers.get('Authorization')
+        token = request.cookies.get('admin_token') or request.headers.get('Authorization', '')
+        # Strip 'Bearer ' prefix if present
+        if token.startswith('Bearer '):
+            token = token[7:]
         if not verify_admin_token(token):
             return jsonify({'error': 'Unauthorized'}), 401
         
@@ -1460,7 +1484,10 @@ def init_database():
     """Initialize/reset database (admin only)"""
     try:
         # Verify admin authentication
-        token = request.cookies.get('admin_token') or request.headers.get('Authorization')
+        token = request.cookies.get('admin_token') or request.headers.get('Authorization', '')
+        # Strip 'Bearer ' prefix if present
+        if token.startswith('Bearer '):
+            token = token[7:]
         if not verify_admin_token(token):
             return jsonify({'error': 'Unauthorized'}), 401
         
@@ -1475,7 +1502,10 @@ def check_database():
     """Check database tables and counts (admin only)"""
     try:
         # Verify admin authentication
-        token = request.cookies.get('admin_token') or request.headers.get('Authorization')
+        token = request.cookies.get('admin_token') or request.headers.get('Authorization', '')
+        # Strip 'Bearer ' prefix if present
+        if token.startswith('Bearer '):
+            token = token[7:]
         if not verify_admin_token(token):
             return jsonify({'error': 'Unauthorized'}), 401
         
@@ -1831,7 +1861,10 @@ def select_intern():
         return '', 204
     
     try:
-        token = request.cookies.get('admin_token') or request.headers.get('Authorization')
+        token = request.cookies.get('admin_token') or request.headers.get('Authorization', '')
+        # Strip 'Bearer ' prefix if present
+        if token.startswith('Bearer '):
+            token = token[7:]
         if not verify_admin_token(token):
             return jsonify({'error': 'Unauthorized'}), 401
         
@@ -1919,7 +1952,10 @@ def get_all_interns():
         return '', 204
     
     try:
-        token = request.cookies.get('admin_token') or request.headers.get('Authorization')
+        token = request.cookies.get('admin_token') or request.headers.get('Authorization', '')
+        # Strip 'Bearer ' prefix if present
+        if token.startswith('Bearer '):
+            token = token[7:]
         if not verify_admin_token(token):
             return jsonify({'error': 'Unauthorized'}), 401
         
@@ -1959,7 +1995,10 @@ def create_weekly_task():
         return '', 204
     
     try:
-        token = request.cookies.get('admin_token') or request.headers.get('Authorization')
+        token = request.cookies.get('admin_token') or request.headers.get('Authorization', '')
+        # Strip 'Bearer ' prefix if present
+        if token.startswith('Bearer '):
+            token = token[7:]
         if not verify_admin_token(token):
             return jsonify({'error': 'Unauthorized'}), 401
         
@@ -2013,7 +2052,10 @@ def create_weekly_task():
 def get_intern_submissions(intern_id):
     """Get all submissions for a specific intern (admin only)"""
     try:
-        token = request.cookies.get('admin_token') or request.headers.get('Authorization')
+        token = request.cookies.get('admin_token') or request.headers.get('Authorization', '')
+        # Strip 'Bearer ' prefix if present
+        if token.startswith('Bearer '):
+            token = token[7:]
         if not verify_admin_token(token):
             return jsonify({'error': 'Unauthorized'}), 401
         
