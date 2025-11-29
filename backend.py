@@ -590,6 +590,15 @@ def admin_login_redirect():
     from flask import redirect
     return redirect('/admin-login-v2.html', code=302)
 
+@app.route('/admin-v3.html')
+def admin_v3():
+    """Serve standalone admin page v3"""
+    response = send_from_directory('.', 'admin-v3.html')
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
+
 @app.route('/<path:path>')
 def serve_static(path):
     """Serve static files"""
