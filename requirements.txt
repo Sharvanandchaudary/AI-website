@@ -11,5 +11,6 @@ pytest==7.4.3
 pytest-cov==4.1.0
 pytest-html==4.1.1
 coverage==7.3.2
-bandit==1.7.5
+bandit[toml]==1.7.5
+pbr==6.0.0
 safety==2.3.5

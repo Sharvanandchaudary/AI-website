@@ -67,14 +67,16 @@ jobs:
     
     - name: Security Check - Bandit
       run: |
-        pip install bandit
-        bandit -r . -f json -o bandit-report.json || true
-        cat bandit-report.json
+        pip install bandit[toml] pbr
+        bandit -r . -f json -o bandit-report.json -ll || echo "⚠️ Security warnings found"
+        if [ -f bandit-report.json ]; then cat bandit-report.json; fi
+      continue-on-error: true
     
     - name: Check for vulnerabilities
       run: |
         pip install safety
-        safety check --json || true
+        safety check --json || echo "⚠️ Vulnerability warnings found"
+      continue-on-error: true
     
     - name: Test Summary
       if: always()

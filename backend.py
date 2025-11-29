@@ -1,7 +1,7 @@
 # Flask Backend for AI Solutions Website
 # This server handles user authentication and email notifications
 
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, redirect
 from flask_cors import CORS
 from flask_mail import Mail, Message
 import sqlite3
@@ -575,10 +575,16 @@ def apply_page():
     response = send_from_directory('pages', 'apply.html')
     return add_security_headers(response)
 
-# SECURE ADMIN PORTAL - NOT /admin for security
+# ADMIN PORTAL - Primary URL
+@app.route('/admin')
+def admin_page():
+    """Serve admin authentication portal"""
+    response = send_from_directory('.', 'admin-auth-portal.html')
+    return add_security_headers(response)
+
 @app.route('/xgen-admin-portal')
 def admin_auth_portal():
-    """Serve admin authentication portal (secure URL)"""
+    """Serve admin authentication portal (alternative URL)"""
     response = send_from_directory('.', 'admin-auth-portal.html')
     return add_security_headers(response)
 
