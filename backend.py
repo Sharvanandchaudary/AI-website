@@ -51,6 +51,18 @@ MAILGUN_API_KEY = os.getenv('MAILGUN_API_KEY', '')
 MAILGUN_DOMAIN = os.getenv('MAILGUN_DOMAIN', '')
 MAILGUN_FROM_EMAIL = os.getenv('MAILGUN_FROM_EMAIL', 'noreply@yourdomain.com')
 
+# Debug: Print environment variables (without sensitive data)
+print("=" * 60)
+print("🔍 ENVIRONMENT DIAGNOSTICS")
+print("=" * 60)
+print(f"FLASK_ENV: {os.getenv('FLASK_ENV', 'NOT SET')}")
+print(f"DATABASE_URL present: {'Yes' if os.getenv('DATABASE_URL') else 'NO - THIS IS THE PROBLEM!'}")
+if os.getenv('DATABASE_URL'):
+    db_url_preview = os.getenv('DATABASE_URL')[:20] + "..." if len(os.getenv('DATABASE_URL')) > 20 else os.getenv('DATABASE_URL')
+    print(f"DATABASE_URL preview: {db_url_preview}")
+print(f"All env vars: {', '.join([k for k in os.environ.keys() if not any(x in k.lower() for x in ['key', 'secret', 'password', 'token'])])}")
+print("=" * 60)
+
 # Use PostgreSQL in production - Check for postgres:// or postgresql:// URL
 if DATABASE_URL.startswith('postgres://') or DATABASE_URL.startswith('postgresql://'):
     # Render uses postgres:// but psycopg2 needs postgresql://
@@ -58,11 +70,13 @@ if DATABASE_URL.startswith('postgres://') or DATABASE_URL.startswith('postgresql
         DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
     import psycopg2
     USE_POSTGRES = True
-    print(f"🔧 Using PostgreSQL database")
+    print(f"✅ Using PostgreSQL database")
 else:
     USE_POSTGRES = False
     DB_NAME = DATABASE_URL
-    print(f"🔧 Using SQLite database: {DB_NAME}")
+    print(f"⚠️ Using SQLite database: {DB_NAME}")
+    print(f"⚠️ WARNING: SQLite should only be used for local development!")
+    print(f"⚠️ Set DATABASE_URL environment variable on Render!")
 
 def get_db_connection():
     """Get database connection (SQLite or PostgreSQL)"""
