@@ -502,7 +502,7 @@
 
         // Check authentication
         if (!authToken) {
-            window.location.href = '/xgenai-admin';
+            window.location.href = '/xgenai-admin-portal';
         }
 
         // Load all data on page load
@@ -804,7 +804,7 @@
                 localStorage.removeItem('admin_token');
                 localStorage.removeItem('adminToken');
                 localStorage.removeItem('adminEmail');
-                window.location.href = '/xgenai-admin';
+                window.location.href = '/xgenai-admin-portal';
             }
         }
     </script>

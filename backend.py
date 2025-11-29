@@ -575,37 +575,44 @@ def apply_page():
     response = send_from_directory('pages', 'apply.html')
     return add_security_headers(response)
 
-# NEW SEPARATE ADMIN PORTAL - Complete isolation
-@app.route('/xgenai-admin')
-def xgenai_admin_login():
-    """Serve new separate admin login page"""
+# PRODUCTION-GRADE ADMIN PORTAL - Separate URL Structure
+@app.route('/xgenai-admin-portal')
+def xgenai_admin_portal_login():
+    """Production admin portal - Login page"""
     response = send_from_directory('.', 'xgenai-admin-login.html')
     return add_security_headers(response)
 
-@app.route('/xgenai-admin-dashboard')
-def xgenai_admin_dashboard():
-    """Serve new separate admin dashboard"""
+@app.route('/xgenai-admin-portal/dashboard')
+def xgenai_admin_portal_dashboard():
+    """Production admin portal - Dashboard"""
     response = send_from_directory('.', 'xgenai-admin-dashboard.html')
     return add_security_headers(response)
 
-# OLD ADMIN PORTAL (kept for backward compatibility)
+# Legacy admin URLs - Redirect to new portal
 @app.route('/admin')
 def admin_page():
-    """Serve admin authentication portal"""
-    response = send_from_directory('.', 'admin-auth-portal.html')
-    return add_security_headers(response)
+    """Redirect old admin URL to new portal"""
+    return redirect('/xgenai-admin-portal')
+
+@app.route('/xgenai-admin')
+def xgenai_admin_legacy():
+    """Legacy admin URL - redirect to new portal"""
+    return redirect('/xgenai-admin-portal')
 
 @app.route('/xgen-admin-portal')
 def admin_auth_portal():
-    """Serve admin authentication portal (alternative URL)"""
-    response = send_from_directory('.', 'admin-auth-portal.html')
-    return add_security_headers(response)
+    """Legacy admin URL - redirect to new portal"""
+    return redirect('/xgenai-admin-portal')
+
+@app.route('/xgenai-admin-dashboard')
+def xgenai_admin_dashboard_legacy():
+    """Legacy dashboard - redirect to new portal"""
+    return redirect('/xgenai-admin-portal/dashboard')
 
 @app.route('/xgen-admin-dashboard')
 def admin_dashboard_portal():
-    """Serve admin dashboard (requires authentication)"""
-    response = send_from_directory('.', 'admin-dashboard-portal.html')
-    return add_security_headers(response)
+    """Legacy dashboard - redirect to new portal"""
+    return redirect('/xgenai-admin-portal/dashboard')
 
 # Intern Portal
 @app.route('/intern-login')
