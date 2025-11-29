@@ -537,68 +537,83 @@ def index():
     """Serve the main page"""
     return send_from_directory('.', 'index.html')
 
+# Cache version for busting browser cache
+CACHE_VERSION = 'v2.1.0'
+
+def add_security_headers(response):
+    """Add production security headers"""
+    response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    response.headers['Cache-Control'] = f'no-cache, no-store, must-revalidate, private'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
+
 @app.route('/careers')
 def careers_page():
     """Serve careers page"""
-    return send_from_directory('.', 'careers.html')
+    response = send_from_directory('.', 'careers.html')
+    return add_security_headers(response)
 
 @app.route('/auth')
 def auth_page():
     """Serve authentication page"""
-    return send_from_directory('.', 'auth.html')
+    response = send_from_directory('.', 'auth.html')
+    return add_security_headers(response)
 
 @app.route('/dashboard')
 def dashboard_page():
     """Serve user dashboard page"""
-    return send_from_directory('.', 'dashboard.html')
+    response = send_from_directory('.', 'dashboard.html')
+    return add_security_headers(response)
 
 @app.route('/apply')
 def apply_page():
     """Serve application form page"""
-    return send_from_directory('pages', 'apply.html')
+    response = send_from_directory('pages', 'apply.html')
+    return add_security_headers(response)
 
-@app.route('/admin/login')
-def admin_login_page():
-    """Serve admin login page"""
-    response = send_from_directory('.', 'admin-login.html')
-    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-    response.headers['Pragma'] = 'no-cache'
-    response.headers['Expires'] = '0'
-    return response
+# SECURE ADMIN PORTAL - NOT /admin for security
+@app.route('/xgen-admin-portal')
+def admin_auth_portal():
+    """Serve admin authentication portal (secure URL)"""
+    response = send_from_directory('.', 'admin-auth-portal.html')
+    return add_security_headers(response)
 
-@app.route('/admin')
-def admin_page():
-    """Serve admin dashboard - always serve standalone v3 page"""
-    response = send_from_directory('.', 'admin-v3.html')
-    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-    response.headers['Pragma'] = 'no-cache'
-    response.headers['Expires'] = '0'
-    return response
+@app.route('/xgen-admin-dashboard')
+def admin_dashboard_portal():
+    """Serve admin dashboard (requires authentication)"""
+    response = send_from_directory('.', 'admin-dashboard-portal.html')
+    return add_security_headers(response)
 
-@app.route('/admin/login')
-def admin_login_redirect():
-    """Redirect old admin login URL to new one"""
-    from flask import redirect
-    return redirect('/admin-login-v2.html', code=302)
+# Intern Portal
+@app.route('/intern-login')
+def intern_login_page():
+    """Serve intern login page"""
+    response = send_from_directory('.', 'intern-login.html')
+    return add_security_headers(response)
 
-@app.route('/admin-v3.html')
-def admin_v3():
-    """Serve standalone admin page v3"""
-    response = send_from_directory('.', 'admin-v3.html')
-    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-    response.headers['Pragma'] = 'no-cache'
-    response.headers['Expires'] = '0'
+@app.route('/intern-dashboard')
+def intern_dashboard_page():
+    """Serve intern dashboard page"""
+    response = send_from_directory('.', 'intern-dashboard.html')
+    return add_security_headers(response)
     return response
 
 @app.route('/<path:path>')
 def serve_static(path):
-    """Serve static files"""
+    """Serve static files with proper caching and security"""
     response = send_from_directory('.', path)
-    # Add no-cache headers for HTML and CSS files
+    
+    # Add security headers and no-cache for HTML, CSS, JS
     if path.endswith(('.html', '.css', '.js')):
-        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-        response.headers['Pragma'] = 'no-cache'
-        response.headers['Expires'] = '0'
+        response = add_security_headers(response)
+    else:
+        # Allow caching for images and other assets (1 hour)
+        response.headers['Cache-Control'] = 'public, max-age=3600'
+    
     return response
 
 @app.route('/api/signup', methods=['POST'])
