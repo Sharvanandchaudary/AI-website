@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Application Submission - XGENAI</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: white;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #444;
+            border-radius: 5px;
+            background: #2a2a2a;
+            color: white;
+            font-size: 14px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            width: 100%;
+            margin-top: 20px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        .status {
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+            display: none;
+        }
+        .status.success {
+            background: #4CAF50;
+            display: block;
+        }
+        .status.error {
+            background: #f44336;
+            display: block;
+        }
+        .info {
+            background: #2196F3;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Application Submission</h1>
+    
+    <div class="info">
+        <strong>Testing API:</strong> https://xgenai.onrender.com/api/applications
+        <br><strong>Version:</strong> 2.1.3
+    </div>
+
+    <div id="status" class="status"></div>
+
+    <form id="testForm">
+        <div class="form-group">
+            <label>Position:</label>
+            <select name="position" required>
+                <option value="AI Intern">AI Intern</option>
+                <option value="Machine Learning Intern">Machine Learning Intern</option>
+                <option value="MedTech Intern">MedTech Intern</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Full Name *</label>
+            <input type="text" name="fullName" required placeholder="John Doe">
+        </div>
+
+        <div class="form-group">
+            <label>Email *</label>
+            <input type="email" name="email" required placeholder="john@example.com">
+        </div>
+
+        <div class="form-group">
+            <label>Phone *</label>
+            <input type="tel" name="phone" required placeholder="+1234567890">
+        </div>
+
+        <div class="form-group">
+            <label>Address *</label>
+            <textarea name="address" required rows="2" placeholder="123 Main St, City, Country"></textarea>
+        </div>
+
+        <div class="form-group">
+            <label>College/University *</label>
+            <input type="text" name="college" required placeholder="MIT">
+        </div>
+
+        <div class="form-group">
+            <label>Degree *</label>
+            <input type="text" name="degree" required placeholder="B.Tech in Computer Science">
+        </div>
+
+        <div class="form-group">
+            <label>Current Semester *</label>
+            <input type="text" name="semester" required placeholder="6">
+        </div>
+
+        <div class="form-group">
+            <label>Graduation Year *</label>
+            <input type="text" name="year" required placeholder="2025">
+        </div>
+
+        <div class="form-group">
+            <label>About Yourself *</label>
+            <textarea name="about" required rows="4" placeholder="Tell us about yourself..."></textarea>
+        </div>
+
+        <div class="form-group">
+            <label>Resume File Name</label>
+            <input type="text" name="resumeName" value="test-resume.pdf" required>
+        </div>
+
+        <div class="form-group">
+            <label>LinkedIn (Optional)</label>
+            <input type="url" name="linkedin" placeholder="https://linkedin.com/in/johndoe">
+        </div>
+
+        <div class="form-group">
+            <label>GitHub (Optional)</label>
+            <input type="url" name="github" placeholder="https://github.com/johndoe">
+        </div>
+
+        <button type="submit" id="submitBtn">Submit Test Application</button>
+    </form>
+
+    <script>
+        const API_URL = 'https://xgenai.onrender.com';
+        
+        document.getElementById('testForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const statusDiv = document.getElementById('status');
+            const originalText = submitBtn.textContent;
+            
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
+            statusDiv.className = 'status';
+            statusDiv.textContent = '';
+            
+            try {
+                const formData = new FormData(e.target);
+                const applicationData = {
+                    position: formData.get('position'),
+                    fullName: formData.get('fullName'),
+                    email: formData.get('email'),
+                    phone: formData.get('phone'),
+                    address: formData.get('address'),
+                    college: formData.get('college'),
+                    degree: formData.get('degree'),
+                    semester: formData.get('semester'),
+                    year: formData.get('year'),
+                    about: formData.get('about'),
+                    resumeName: formData.get('resumeName'),
+                    linkedin: formData.get('linkedin') || '',
+                    github: formData.get('github') || ''
+                };
+                
+                console.log('📤 Sending application:', applicationData);
+                
+                const response = await fetch(`${API_URL}/api/applications`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(applicationData)
+                });
+                
+                console.log('📥 Response status:', response.status);
+                const result = await response.json();
+                console.log('📥 Response data:', result);
+                
+                if (response.ok && result.success) {
+                    statusDiv.className = 'status success';
+                    statusDiv.innerHTML = `
+                        ✅ <strong>SUCCESS!</strong><br>
+                        Application ID: ${result.application_id}<br>
+                        Message: ${result.message}<br><br>
+                        Check admin dashboard to verify!
+                    `;
+                    e.target.reset();
+                } else {
+                    throw new Error(result.error || 'Failed to submit');
+                }
+                
+            } catch (error) {
+                console.error('❌ Error:', error);
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = `
+                    ❌ <strong>ERROR!</strong><br>
+                    ${error.message}<br><br>
+                    Check console for details.
+                `;
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+            }
+        });
+    </script>
+</body>
+</html>
