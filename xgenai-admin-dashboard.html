@@ -498,7 +498,7 @@
 
     <script>
         const API_URL = window.location.origin;
-        let authToken = localStorage.getItem('admin_token');
+        let authToken = localStorage.getItem('adminToken') || localStorage.getItem('admin_token');
 
         // Check authentication
         if (!authToken) {
@@ -801,9 +801,20 @@
 
         function logout() {
             if (confirm('Are you sure you want to logout?')) {
+                // Clear all possible token keys for compatibility
                 localStorage.removeItem('admin_token');
                 localStorage.removeItem('adminToken');
                 localStorage.removeItem('adminEmail');
+                
+                // Call logout API
+                fetch(`${API_URL}/api/admin/logout`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                }).catch(err => console.log('Logout API error:', err));
+                
+                // Redirect to login
                 window.location.href = '/xgenai-admin-portal';
             }
         }
