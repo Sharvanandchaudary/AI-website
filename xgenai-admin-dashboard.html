@@ -424,6 +424,29 @@
             box-shadow: 0 6px 24px rgba(16, 185, 129, 0.6), 0 0 20px rgba(16, 185, 129, 0.3);
         }
 
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            font-weight: 600;
+        }
+
+        .btn-danger:hover {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.5);
+        }
+
+        .btn-secondary {
+            background: #64748b;
+            color: white;
+            font-weight: 600;
+        }
+
+        .btn-secondary:hover {
+            background: #475569;
+            transform: translateY(-2px);
+        }
+
         .badge {
             padding: 6px 14px;
             border-radius: 20px;
@@ -960,55 +983,68 @@
         function viewApplicationDetails(app) {
             const fullName = app.fullName || app.full_name || 'N/A';
             const appliedDate = new Date(app.appliedAt || app.applied_at).toLocaleString();
+            const resumeUrl = app.resumePath ? `${API_URL}/uploads/${app.resumePath}` : null;
             
             const modalHtml = `
-                <div id="appDetailModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; display: flex; align-items: center; justify-content: center;">
-                    <div style="background: #1a1a2e; border-radius: 12px; max-width: 800px; width: 90%; max-height: 90vh; overflow-y: auto; padding: 30px; position: relative;">
-                        <button onclick="document.getElementById('appDetailModal').remove()" style="position: absolute; top: 15px; right: 15px; background: none; border: none; color: #fff; font-size: 24px; cursor: pointer;">&times;</button>
+                <div id="appDetailModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 20px;">
+                    <div style="background: #ffffff; border-radius: 16px; max-width: 900px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 40px; position: relative; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+                        <button onclick="document.getElementById('appDetailModal').remove()" style="position: absolute; top: 20px; right: 20px; background: #f1f5f9; border: none; color: #64748b; font-size: 24px; cursor: pointer; width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">&times;</button>
                         
-                        <h2 style="color: #00d4ff; margin-bottom: 20px;"><i class="fas fa-id-card" style="margin-right: 10px;"></i> Application Details</h2>
+                        <h2 style="color: #1e293b; margin-bottom: 24px; font-size: 24px; font-weight: 700; display: flex; align-items: center; gap: 12px;">
+                            <i class="fas fa-id-card" style="color: #6366f1; font-size: 28px;"></i> Application Details
+                        </h2>
                         
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
-                            <div>
-                                <h3 style="color: #00d4ff; font-size: 16px; margin-bottom: 15px;">Personal Information</h3>
-                                <p><strong>Full Name:</strong> ${fullName}</p>
-                                <p><strong>Email:</strong> ${app.email}</p>
-                                <p><strong>Phone:</strong> ${app.phone || 'N/A'}</p>
-                                <p><strong>Address:</strong> ${app.address || 'N/A'}</p>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+                            <div style="background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                                <h3 style="color: #6366f1; font-size: 16px; margin-bottom: 16px; font-weight: 600;">Personal Information</h3>
+                                <p style="margin-bottom: 8px; color: #475569; line-height: 1.6;"><strong style="color: #1e293b;">Full Name:</strong> ${fullName}</p>
+                                <p style="margin-bottom: 8px; color: #475569; line-height: 1.6;"><strong style="color: #1e293b;">Email:</strong> ${app.email}</p>
+                                <p style="margin-bottom: 8px; color: #475569; line-height: 1.6;"><strong style="color: #1e293b;">Phone:</strong> ${app.phone || 'N/A'}</p>
+                                <p style="margin-bottom: 0; color: #475569; line-height: 1.6;"><strong style="color: #1e293b;">Address:</strong> ${app.address || 'N/A'}</p>
                             </div>
                             
-                            <div>
-                                <h3 style="color: #00d4ff; font-size: 16px; margin-bottom: 15px;">Application Info</h3>
-                                <p><strong>Position:</strong> ${app.position}</p>
-                                <p><strong>Status:</strong> <span class="badge ${app.status === 'selected' ? 'badge-success' : app.status === 'rejected' ? 'badge-rejected' : 'badge-pending'}">${app.status}</span></p>
-                                <p><strong>Applied:</strong> ${appliedDate}</p>
-                                <p><strong>Application ID:</strong> #${app.id}</p>
+                            <div style="background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                                <h3 style="color: #6366f1; font-size: 16px; margin-bottom: 16px; font-weight: 600;">Application Info</h3>
+                                <p style="margin-bottom: 8px; color: #475569; line-height: 1.6;"><strong style="color: #1e293b;">Position:</strong> ${app.position}</p>
+                                <p style="margin-bottom: 8px; color: #475569; line-height: 1.6;"><strong style="color: #1e293b;">Status:</strong> <span class="badge ${app.status === 'selected' ? 'badge-success' : app.status === 'rejected' ? 'badge-rejected' : 'badge-pending'}">${app.status.toUpperCase()}</span></p>
+                                <p style="margin-bottom: 8px; color: #475569; line-height: 1.6;"><strong style="color: #1e293b;">Applied:</strong> ${appliedDate}</p>
+                                <p style="margin-bottom: 0; color: #475569; line-height: 1.6;"><strong style="color: #1e293b;">Application ID:</strong> #${app.id}</p>
                             </div>
                         </div>
                         
-                        <div style="margin-bottom: 20px;">
-                            <h3 style="color: #00d4ff; font-size: 16px; margin-bottom: 15px;">Education</h3>
-                            <p><strong>College:</strong> ${app.college}</p>
-                            <p><strong>Degree:</strong> ${app.degree || 'N/A'}</p>
-                            <p><strong>Current Semester:</strong> ${app.semester}</p>
-                            <p><strong>Graduation Year:</strong> ${app.year}</p>
+                        <div style="background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 24px;">
+                            <h3 style="color: #6366f1; font-size: 16px; margin-bottom: 16px; font-weight: 600;">Education</h3>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                                <p style="margin-bottom: 8px; color: #475569; line-height: 1.6;"><strong style="color: #1e293b;">College:</strong> ${app.college}</p>
+                                <p style="margin-bottom: 8px; color: #475569; line-height: 1.6;"><strong style="color: #1e293b;">Degree:</strong> ${app.degree || 'N/A'}</p>
+                                <p style="margin-bottom: 0; color: #475569; line-height: 1.6;"><strong style="color: #1e293b;">Semester:</strong> ${app.semester}</p>
+                                <p style="margin-bottom: 0; color: #475569; line-height: 1.6;"><strong style="color: #1e293b;">Graduation:</strong> ${app.year}</p>
+                            </div>
                         </div>
                         
-                        <div style="margin-bottom: 20px;">
-                            <h3 style="color: #00d4ff; font-size: 16px; margin-bottom: 15px;">About</h3>
-                            <p style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; line-height: 1.6;">${app.about || 'No description provided'}</p>
+                        <div style="background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 24px;">
+                            <h3 style="color: #6366f1; font-size: 16px; margin-bottom: 16px; font-weight: 600;">About</h3>
+                            <p style="color: #475569; line-height: 1.7; margin: 0;">${app.about || 'No description provided'}</p>
                         </div>
                         
-                        <div style="margin-bottom: 20px;">
-                            <h3 style="color: #00d4ff; font-size: 16px; margin-bottom: 15px;">Resume & Links</h3>
-                            <p><strong>Resume:</strong> ${app.resumeName || app.resume_name || 'Not uploaded'}</p>
-                            ${app.linkedin ? `<p><strong>LinkedIn:</strong> <a href="${app.linkedin}" target="_blank" style="color: #00d4ff;">${app.linkedin}</a></p>` : ''}
-                            ${app.github ? `<p><strong>GitHub:</strong> <a href="${app.github}" target="_blank" style="color: #00d4ff;">${app.github}</a></p>` : ''}
+                        <div style="background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 24px;">
+                            <h3 style="color: #6366f1; font-size: 16px; margin-bottom: 16px; font-weight: 600;">Resume & Links</h3>
+                            ${resumeUrl ? 
+                                `<p style="margin-bottom: 12px;">
+                                    <strong style="color: #1e293b;">Resume:</strong> 
+                                    <a href="${resumeUrl}" download="${app.resumeName || 'resume.pdf'}" style="display: inline-flex; align-items: center; gap: 6px; color: #6366f1; text-decoration: none; font-weight: 600; padding: 8px 16px; background: white; border: 2px solid #6366f1; border-radius: 8px; transition: all 0.2s; margin-left: 8px;" onmouseover="this.style.background='#6366f1'; this.style.color='white';" onmouseout="this.style.background='white'; this.style.color='#6366f1';">
+                                        <i class="fas fa-download"></i> Download Resume
+                                    </a>
+                                </p>` : 
+                                `<p style="margin-bottom: 12px; color: #94a3b8;"><strong style="color: #1e293b;">Resume:</strong> Not uploaded</p>`
+                            }
+                            ${app.linkedin ? `<p style="margin-bottom: 8px; color: #475569;"><strong style="color: #1e293b;">LinkedIn:</strong> <a href="${app.linkedin}" target="_blank" style="color: #6366f1; text-decoration: none; font-weight: 500;">${app.linkedin}</a></p>` : ''}
+                            ${app.github ? `<p style="margin-bottom: 0; color: #475569;"><strong style="color: #1e293b;">GitHub:</strong> <a href="${app.github}" target="_blank" style="color: #6366f1; text-decoration: none; font-weight: 500;">${app.github}</a></p>` : ''}
                         </div>
                         
-                        <div style="display: flex; gap: 10px; margin-top: 25px;">
+                        <div style="display: flex; gap: 12px; margin-top: 28px;">
                             ${app.status === 'pending' ? 
-                                `<button class="btn btn-success" style="box-shadow: 0 4px 12px rgba(16, 185, 129, 0.5);" onclick="selectIntern(${app.id}, '${fullName.replace(/'/g, "\\'")}', '${app.email}', '${app.position}', '${app.college}'); document.getElementById('appDetailModal').remove();">
+                                `<button class="btn btn-success" style="box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);" onclick="selectIntern(${app.id}, '${fullName.replace(/'/g, "\\'")}', '${app.email}', '${app.position}', '${app.college}'); document.getElementById('appDetailModal').remove();">
                                     <i class="fas fa-user-check" style="font-size: 16px; margin-right: 6px;"></i> Select as Intern
                                 </button>
                                 <button class="btn btn-danger" onclick="updateApplicationStatus(${app.id}, 'rejected'); document.getElementById('appDetailModal').remove();">
