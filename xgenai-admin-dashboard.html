@@ -78,6 +78,16 @@
             -webkit-text-fill-color: transparent;
             background-clip: text;
             margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .page-header h2 i {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .page-header p {
@@ -123,8 +133,16 @@
         .stat-card .icon {
             font-size: 48px;
             margin-bottom: 18px;
+            color: #667eea;
             filter: drop-shadow(0 4px 8px rgba(102, 126, 234, 0.3));
             animation: float 3s ease-in-out infinite;
+        }
+
+        .stat-card .icon i {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         @keyframes float {
@@ -243,6 +261,10 @@
             gap: 12px;
         }
 
+        .section h2 i {
+            color: #667eea;
+        }
+
         .section h2::before {
             content: '';
             width: 4px;
@@ -280,6 +302,11 @@
             position: sticky;
             top: 0;
             z-index: 10;
+        }
+
+        table th i {
+            margin-right: 6px;
+            opacity: 0.9;
         }
 
         table td {
@@ -570,29 +597,29 @@
     <div class="container">
         <!-- Page Header -->
         <div class="page-header">
-            <h2>📊 Dashboard Overview</h2>
+            <h2><i class="fas fa-chart-line"></i> Dashboard Overview</h2>
             <p>Monitor and manage applications, interns, and system activities</p>
         </div>
 
         <!-- Stats -->
         <div class="stats-grid">
             <div class="stat-card">
-                <div class="icon">👥</div>
+                <div class="icon"><i class="fas fa-users"></i></div>
                 <h3 id="totalUsers">-</h3>
                 <p>Total Users</p>
             </div>
             <div class="stat-card">
-                <div class="icon">📄</div>
+                <div class="icon"><i class="fas fa-file-alt"></i></div>
                 <h3 id="totalApplications">-</h3>
                 <p>Applications</p>
             </div>
             <div class="stat-card">
-                <div class="icon">🎓</div>
+                <div class="icon"><i class="fas fa-user-graduate"></i></div>
                 <h3 id="totalInterns">-</h3>
                 <p>Active Interns</p>
             </div>
             <div class="stat-card">
-                <div class="icon">✉️</div>
+                <div class="icon"><i class="fas fa-envelope"></i></div>
                 <h3 id="totalEmails">-</h3>
                 <p>Emails Sent</p>
             </div>
@@ -621,7 +648,7 @@
         <div class="tab-content active" id="applicationsTab">
             <div class="section">
                 <div class="section-header">
-                    <h2>📋 Job Applications</h2>
+                    <h2><i class="fas fa-clipboard-list"></i> Job Applications</h2>
                 </div>
                 <div class="search-bar">
                     <i class="fas fa-search"></i>
@@ -638,7 +665,7 @@
         <div class="tab-content" id="internsTab">
             <div class="section">
                 <div class="section-header">
-                    <h2>🎓 Selected Interns</h2>
+                    <h2><i class="fas fa-user-graduate"></i> Selected Interns</h2>
                 </div>
                 <div id="internsContent" class="loading">
                     <i class="fas fa-circle-notch"></i>
@@ -665,7 +692,7 @@
         <div class="tab-content" id="usersTab">
             <div class="section">
                 <div class="section-header">
-                    <h2>👥 Registered Users</h2>
+                    <h2><i class="fas fa-users"></i> Registered Users</h2>
                 </div>
                 <div id="usersContent" class="loading">
                     <i class="fas fa-circle-notch"></i>
@@ -678,7 +705,7 @@
         <div class="tab-content" id="emailsTab">
             <div class="section">
                 <div class="section-header">
-                    <h2>✉️ Email History</h2>
+                    <h2><i class="fas fa-envelope-open-text"></i> Email History</h2>
                 </div>
                 <div id="emailsContent" class="loading">
                     <i class="fas fa-circle-notch"></i>
@@ -783,15 +810,15 @@
                     if (data.applications && data.applications.length > 0) {
                         let html = '<div class="table-container"><table>';
                         html += `<thead><tr>
-                            <th>👤 Name</th>
-                            <th>📧 Email</th>
-                            <th>📱 Phone</th>
-                            <th>💼 Position</th>
-                            <th>🎓 College</th>
-                            <th>📅 Semester/Year</th>
-                            <th>🕒 Applied Date</th>
-                            <th>📊 Status</th>
-                            <th>⚡ Actions</th>
+                            <th><i class="fas fa-user"></i> Name</th>
+                            <th><i class="fas fa-envelope"></i> Email</th>
+                            <th><i class="fas fa-phone"></i> Phone</th>
+                            <th><i class="fas fa-briefcase"></i> Position</th>
+                            <th><i class="fas fa-university"></i> College</th>
+                            <th><i class="fas fa-calendar-alt"></i> Semester/Year</th>
+                            <th><i class="fas fa-clock"></i> Applied Date</th>
+                            <th><i class="fas fa-chart-bar"></i> Status</th>
+                            <th><i class="fas fa-bolt"></i> Actions</th>
                         </tr></thead><tbody>`;
                         
                         data.applications.forEach(app => {
@@ -813,15 +840,15 @@
                                 <td><span class="badge ${statusBadge}">${app.status.toUpperCase()}</span></td>
                                 <td style="white-space: nowrap;">
                                     <button class="btn btn-primary" style="font-size: 12px; padding: 8px 14px; margin-right: 8px;" onclick='viewApplicationDetails(${JSON.stringify(app).replace(/'/g, "&#39;")})'>
-                                        👁️ View
+                                        <i class="fas fa-eye"></i> View
                                     </button>
                                     ${app.status === 'pending' ? 
                                         `<button class="btn btn-success" style="font-size: 13px; padding: 9px 18px; font-weight: 700;" onclick="selectIntern(${app.id}, '${fullName.replace(/'/g, "\\'")}', '${app.email}', '${app.position}', '${app.college}')">
-                                            ✅ SELECT
+                                            <i class="fas fa-check-circle"></i> SELECT
                                         </button>` : 
                                         app.status === 'selected' ? 
-                                        `<span style="color: #10b981; font-size: 12px;">✓ Selected</span>` :
-                                        `<span style="color: #ef4444; font-size: 12px;">✗ Rejected</span>`}
+                                        `<span style="color: #10b981; font-size: 12px;"><i class="fas fa-check"></i> Selected</span>` :
+                                        `<span style="color: #ef4444; font-size: 12px;"><i class="fas fa-times"></i> Rejected</span>`}
                                 </td>
                             </tr>`;
                         });
