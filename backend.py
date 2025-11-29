@@ -488,12 +488,35 @@ def verify_admin_token(token):
 
 # Initialize database on module load (works with Gunicorn)
 try:
+    print("🔧 Starting database initialization...")
     init_db()
     print("✅ Database initialized on startup")
 except Exception as e:
-    print(f"⚠️ Database initialization warning: {e}")
+    print(f"⚠️ Database initialization error: {e}")
+    import traceback
+    traceback.print_exc()
 
 # Routes
+
+@app.route('/health')
+def health_check():
+    """Health check endpoint for monitoring"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('SELECT 1')
+        cursor.fetchone()
+        conn.close()
+        return jsonify({
+            'status': 'healthy',
+            'database': 'PostgreSQL' if USE_POSTGRES else 'SQLite',
+            'connection': 'ok'
+        }), 200
+    except Exception as e:
+        return jsonify({
+            'status': 'unhealthy',
+            'error': str(e)
+        }), 500
 
 @app.route('/')
 def index():
@@ -831,26 +854,38 @@ def get_stats():
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # Total users
-        cursor.execute('SELECT COUNT(*) FROM users')
-        total_users = cursor.fetchone()[0]
+        try:
+            # Total users
+            cursor.execute('SELECT COUNT(*) FROM users')
+            total_users = cursor.fetchone()[0]
+        except Exception as e:
+            print(f"Error fetching users count: {e}")
+            total_users = 0
         
-        # Total emails
-        cursor.execute('SELECT COUNT(*) FROM emails')
-        total_emails = cursor.fetchone()[0]
+        try:
+            # Total emails
+            cursor.execute('SELECT COUNT(*) FROM emails')
+            total_emails = cursor.fetchone()[0]
+        except Exception as e:
+            print(f"Error fetching emails count: {e}")
+            total_emails = 0
         
-        # Users today
-        if USE_POSTGRES:
-            cursor.execute('''
-                SELECT COUNT(*) FROM users 
-                WHERE DATE(created_at) = CURRENT_DATE
-            ''')
-        else:
-            cursor.execute('''
-                SELECT COUNT(*) FROM users 
-                WHERE DATE(created_at) = DATE('now')
-            ''')
-        today_users = cursor.fetchone()[0]
+        try:
+            # Users today
+            if USE_POSTGRES:
+                cursor.execute('''
+                    SELECT COUNT(*) FROM users 
+                    WHERE DATE(created_at) = CURRENT_DATE
+                ''')
+            else:
+                cursor.execute('''
+                    SELECT COUNT(*) FROM users 
+                    WHERE DATE(created_at) = DATE('now')
+                ''')
+            today_users = cursor.fetchone()[0]
+        except Exception as e:
+            print(f"Error fetching today's users: {e}")
+            today_users = 0
         
         conn.close()
         
@@ -862,7 +897,14 @@ def get_stats():
         
     except Exception as e:
         print(f"❌ Error fetching stats: {e}")
-        return jsonify({'error': 'Internal server error'}), 500
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'total_users': 0,
+            'total_emails': 0,
+            'today_users': 0,
+            'error': str(e)
+        }), 200  # Return 200 with zeros instead of 500
 
 @app.route('/api/clear-data', methods=['DELETE'])
 def clear_data():
