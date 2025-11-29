@@ -1,6 +1,6 @@
 # Flask Backend for AI Solutions Website
 # This server handles user authentication and email notifications
-# Version: 2.1.2 - Fixed Bearer token authentication for admin endpoints
+# Version: 2.1.3 - Enhanced email sending for applications and improved admin dashboard
 
 from flask import Flask, request, jsonify, send_from_directory, redirect
 from flask_cors import CORS
@@ -532,7 +532,7 @@ def health_check():
             'database': 'PostgreSQL' if USE_POSTGRES else 'SQLite',
             'connection': 'ok',
             'applications_count': app_count,
-            'version': '2.1.2'
+            'version': '2.1.3'
         }), 200
     except Exception as e:
         return jsonify({
@@ -1324,11 +1324,37 @@ Best regards,
 XGENAI Recruitment Team
         """
         
-        # Send confirmation email (only in production if Mailgun is configured)
-        if IS_PRODUCTION and MAILGUN_API_KEY and MAILGUN_DOMAIN:
-            send_email_mailgun(data['email'], f"Application Received - {data['position']}", email_body)
+        # Store email in database first
+        try:
+            cursor = conn.cursor() if not conn else get_db_connection().cursor()
+            if USE_POSTGRES:
+                cursor.execute('''
+                    INSERT INTO emails (to_email, subject, body, sent_at)
+                    VALUES (%s, %s, %s, %s)
+                ''', (data['email'], f"Application Received - {data['position']}", email_body, datetime.now()))
+            else:
+                cursor.execute('''
+                    INSERT INTO emails (to_email, subject, body, sent_at)
+                    VALUES (?, ?, ?, ?)
+                ''', (data['email'], f"Application Received - {data['position']}", email_body, datetime.now()))
+            if not conn:
+                cursor.connection.commit()
+                cursor.connection.close()
+        except Exception as email_db_error:
+            print(f"⚠️ Error storing email in database: {email_db_error}")
+        
+        # Send confirmation email via Mailgun (always try in production)
+        if IS_PRODUCTION:
+            if MAILGUN_API_KEY and MAILGUN_DOMAIN:
+                email_sent = send_email_mailgun(data['email'], f"Application Received - {data['position']}", email_body)
+                if email_sent:
+                    print(f"✅ Email sent successfully to: {data['email']}")
+                else:
+                    print(f"⚠️ Email sending failed to: {data['email']}")
+            else:
+                print(f"⚠️ Mailgun not configured - Email logged for: {data['email']}")
         else:
-            print(f"📧 Email would be sent to: {data['email']} (Mailgun not configured)")
+            print(f"📧 Email logged for: {data['email']} (Development mode)")
         
         print(f"✅ Application submitted successfully for {data['fullName']}")
         
