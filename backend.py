@@ -628,6 +628,12 @@ def intern_dashboard_page():
     response = send_from_directory('.', 'intern-dashboard.html')
     return add_security_headers(response)
 
+@app.route('/test-application.html')
+def test_application_page():
+    """Serve test application page"""
+    response = send_from_directory('.', 'test-application.html')
+    return add_security_headers(response)
+
 # ============================================================================
 # API ROUTES
 # ============================================================================

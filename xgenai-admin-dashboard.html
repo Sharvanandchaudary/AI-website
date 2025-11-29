@@ -559,15 +559,18 @@
                             const statusBadge = app.status === 'selected' ? 'badge-success' :
                                               app.status === 'rejected' ? 'badge-rejected' : 'badge-pending';
                             
+                            // Use fullName (camelCase) from API response
+                            const fullName = app.fullName || app.full_name || 'N/A';
+                            
                             html += `<tr>
-                                <td>${app.full_name}</td>
+                                <td>${fullName}</td>
                                 <td>${app.email}</td>
                                 <td>${app.position}</td>
                                 <td>${app.college}</td>
                                 <td><span class="badge ${statusBadge}">${app.status}</span></td>
                                 <td>
                                     ${app.status === 'pending' ? 
-                                        `<button class="btn btn-success" onclick="selectIntern(${app.id}, '${app.full_name}', '${app.email}', '${app.position}', '${app.college}')">
+                                        `<button class="btn btn-success" onclick="selectIntern(${app.id}, '${fullName.replace(/'/g, "\\'")}', '${app.email}', '${app.position}', '${app.college}')">
                                             <i class="fas fa-check"></i> Select
                                         </button>` : 
                                         '-'}
