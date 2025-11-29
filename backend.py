@@ -486,6 +486,13 @@ def verify_admin_token(token):
         return False
     return token in admin_sessions
 
+# Initialize database on module load (works with Gunicorn)
+try:
+    init_db()
+    print("✅ Database initialized on startup")
+except Exception as e:
+    print(f"⚠️ Database initialization warning: {e}")
+
 # Routes
 
 @app.route('/')
