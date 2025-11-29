@@ -573,7 +573,7 @@ def admin_page():
         # Check for admin token in cookie/header
         token = request.cookies.get('admin_token') or request.headers.get('Authorization')
         if not verify_admin_token(token):
-            response = send_from_directory('.', 'admin-login.html')
+            response = send_from_directory('.', 'admin-login-v2.html')
         else:
             response = send_from_directory('.', 'admin.html')
         response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
@@ -582,7 +582,13 @@ def admin_page():
         return response
     except Exception as e:
         print(f"Error in admin_page: {e}")
-        return send_from_directory('.', 'admin-login.html')
+        return send_from_directory('.', 'admin-login-v2.html')
+
+@app.route('/admin/login')
+def admin_login_redirect():
+    """Redirect old admin login URL to new one"""
+    from flask import redirect
+    return redirect('/admin-login-v2.html', code=302)
 
 @app.route('/<path:path>')
 def serve_static(path):

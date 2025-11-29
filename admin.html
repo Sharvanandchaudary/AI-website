@@ -412,7 +412,7 @@
             const token = getCookie('admin_token') || localStorage.getItem('admin_token');
             if (!token) {
                 // Not authenticated, redirect to login
-                window.location.href = '/admin/login';
+                window.location.href = '/admin-login-v2.html';
                 return false;
             }
             return token;
@@ -435,7 +435,7 @@
                 method: 'POST',
                 headers: { 'Authorization': getCookie('admin_token') || localStorage.getItem('admin_token') }
             }).finally(() => {
-                window.location.href = '/admin/login';
+                window.location.href = '/admin-login-v2.html';
             });
         }
 
