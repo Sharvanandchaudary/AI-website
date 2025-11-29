@@ -568,21 +568,12 @@ def admin_login_page():
 
 @app.route('/admin')
 def admin_page():
-    """Serve admin dashboard (requires authentication)"""
-    try:
-        # Check for admin token in cookie/header
-        token = request.cookies.get('admin_token') or request.headers.get('Authorization')
-        if not verify_admin_token(token):
-            response = send_from_directory('.', 'admin-login-v2.html')
-        else:
-            response = send_from_directory('.', 'admin.html')
-        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-        response.headers['Pragma'] = 'no-cache'
-        response.headers['Expires'] = '0'
-        return response
-    except Exception as e:
-        print(f"Error in admin_page: {e}")
-        return send_from_directory('.', 'admin-login-v2.html')
+    """Serve admin dashboard - always serve standalone v3 page"""
+    response = send_from_directory('.', 'admin-v3.html')
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 @app.route('/admin/login')
 def admin_login_redirect():
