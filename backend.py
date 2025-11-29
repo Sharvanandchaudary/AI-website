@@ -1151,9 +1151,12 @@ def get_all_admin_data():
 
 # Job Applications Endpoints
 
-@app.route('/api/applications', methods=['POST'])
+@app.route('/api/applications', methods=['POST', 'OPTIONS'])
 def submit_application():
     """Submit job application"""
+    if request.method == 'OPTIONS':
+        return '', 204
+    
     try:
         data = request.json
         
@@ -1250,9 +1253,12 @@ XGENAI Recruitment Team
         traceback.print_exc()
         return jsonify({'error': f'Failed to submit application: {str(e)}'}), 500
 
-@app.route('/api/admin/applications', methods=['GET'])
+@app.route('/api/admin/applications', methods=['GET', 'OPTIONS'])
 def get_all_applications():
     """Get all job applications (admin only - requires authentication)"""
+    if request.method == 'OPTIONS':
+        return '', 204
+    
     try:
         # Verify admin authentication
         token = request.cookies.get('admin_token') or request.headers.get('Authorization')
