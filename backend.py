@@ -600,7 +600,6 @@ def intern_dashboard_page():
     """Serve intern dashboard page"""
     response = send_from_directory('.', 'intern-dashboard.html')
     return add_security_headers(response)
-    return response
 
 @app.route('/<path:path>')
 def serve_static(path):
@@ -1458,16 +1457,6 @@ def verify_intern_token(token):
     return intern_sessions.get(token)
 
 # INTERN LOGIN & AUTHENTICATION
-
-@app.route('/intern/login')
-def intern_login_page():
-    """Serve intern login page"""
-    return send_from_directory('.', 'intern-login.html')
-
-@app.route('/intern/dashboard')
-def intern_dashboard_page():
-    """Serve intern dashboard page"""
-    return send_from_directory('.', 'intern-dashboard.html')
 
 @app.route('/api/intern/login', methods=['POST', 'OPTIONS'])
 def intern_login():
