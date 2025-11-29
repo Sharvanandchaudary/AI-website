@@ -627,19 +627,9 @@ def intern_dashboard_page():
     response = send_from_directory('.', 'intern-dashboard.html')
     return add_security_headers(response)
 
-@app.route('/<path:path>')
-def serve_static(path):
-    """Serve static files with proper caching and security"""
-    response = send_from_directory('.', path)
-    
-    # Add security headers and no-cache for HTML, CSS, JS
-    if path.endswith(('.html', '.css', '.js')):
-        response = add_security_headers(response)
-    else:
-        # Allow caching for images and other assets (1 hour)
-        response.headers['Cache-Control'] = 'public, max-age=3600'
-    
-    return response
+# ============================================================================
+# API ROUTES
+# ============================================================================
 
 @app.route('/api/signup', methods=['POST'])
 def signup():
@@ -2056,6 +2046,28 @@ XGENAI Team
     except Exception as e:
         print(f"❌ Error sending welcome email: {e}")
         return False
+
+# ============================================================================
+# STATIC FILE SERVING - Must be last to avoid route conflicts
+# ============================================================================
+
+@app.route('/<path:path>')
+def serve_static(path):
+    """Serve static files with proper caching and security"""
+    response = send_from_directory('.', path)
+    
+    # Add security headers and no-cache for HTML, CSS, JS
+    if path.endswith(('.html', '.css', '.js')):
+        response = add_security_headers(response)
+    else:
+        # Allow caching for images and other assets (1 hour)
+        response.headers['Cache-Control'] = 'public, max-age=3600'
+    
+    return response
+
+# ============================================================================
+# SERVER INITIALIZATION
+# ============================================================================
 
 if __name__ == '__main__':
     # Initialize database
