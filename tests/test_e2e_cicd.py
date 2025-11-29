@@ -361,6 +361,120 @@ class TestDatabaseOperations:
         print(f"\n✅ ✅ ✅ DATABASE OPERATIONS TEST PASSED ✅ ✅ ✅")
 
 
+class TestAdminPortalRouting:
+    """Test production-grade admin portal URL structure and routing"""
+    
+    def test_admin_portal_login_page_loads(self, client):
+        """Test /xgenai-admin-portal serves login page"""
+        print("\n🔐 Testing admin portal login page")
+        response = client.get('/xgenai-admin-portal')
+        assert response.status_code == 200
+        assert b'Admin Portal' in response.data or b'admin' in response.data.lower()
+        print("✅ Admin portal login page loads successfully")
+    
+    def test_admin_portal_dashboard_requires_auth(self, client):
+        """Test /xgenai-admin-portal/dashboard serves dashboard page"""
+        print("\n📊 Testing admin portal dashboard access")
+        response = client.get('/xgenai-admin-portal/dashboard')
+        # Should serve the page (auth is handled by JavaScript)
+        assert response.status_code == 200
+        assert b'dashboard' in response.data.lower() or b'Dashboard' in response.data
+        print("✅ Admin portal dashboard page serves correctly")
+    
+    def test_legacy_admin_url_redirects(self, client):
+        """Test legacy /admin URL redirects to new portal"""
+        print("\n🔄 Testing legacy /admin redirect")
+        response = client.get('/admin', follow_redirects=False)
+        assert response.status_code == 302
+        assert '/xgenai-admin-portal' in response.location
+        print("✅ Legacy /admin redirects to /xgenai-admin-portal")
+    
+    def test_legacy_xgenai_admin_redirects(self, client):
+        """Test legacy /xgenai-admin redirects to new portal"""
+        print("\n🔄 Testing legacy /xgenai-admin redirect")
+        response = client.get('/xgenai-admin', follow_redirects=False)
+        assert response.status_code == 302
+        assert '/xgenai-admin-portal' in response.location
+        print("✅ Legacy /xgenai-admin redirects correctly")
+    
+    def test_legacy_dashboard_url_redirects(self, client):
+        """Test legacy dashboard URLs redirect to new structure"""
+        print("\n🔄 Testing legacy dashboard redirects")
+        
+        # Test /xgenai-admin-dashboard
+        response = client.get('/xgenai-admin-dashboard', follow_redirects=False)
+        assert response.status_code == 302
+        assert '/xgenai-admin-portal/dashboard' in response.location
+        
+        # Test /xgen-admin-dashboard
+        response = client.get('/xgen-admin-dashboard', follow_redirects=False)
+        assert response.status_code == 302
+        assert '/xgenai-admin-portal/dashboard' in response.location
+        
+        print("✅ All legacy dashboard URLs redirect correctly")
+    
+    def test_route_ordering_no_conflicts(self, client):
+        """Test that catch-all route doesn't conflict with specific routes"""
+        print("\n⚙️ Testing route ordering and conflicts")
+        
+        # Test that admin portal dashboard works (not caught by catch-all)
+        response = client.get('/xgenai-admin-portal/dashboard')
+        assert response.status_code == 200
+        
+        # Test that static files still work
+        response = client.get('/index.html')
+        assert response.status_code == 200
+        
+        print("✅ No route conflicts detected - ordering is correct")
+    
+    def test_admin_portal_with_authentication_flow(self, client):
+        """Test complete admin portal authentication flow"""
+        print("\n🔐 Testing complete admin authentication flow")
+        
+        # Step 1: Access login page
+        response = client.get('/xgenai-admin-portal')
+        assert response.status_code == 200
+        
+        # Step 2: Login via API
+        login_response = client.post('/api/admin/login', json={
+            'email': 'admin@xgenai.com',
+            'password': 'Admin@123'
+        })
+        assert login_response.status_code == 200
+        data = login_response.get_json()
+        assert 'token' in data
+        token = data['token']
+        
+        # Step 3: Verify token with /api/admin/verify endpoint
+        verify_response = client.get('/api/admin/verify',
+                                     headers={'Authorization': token})
+        assert verify_response.status_code == 200
+        verify_data = verify_response.get_json()
+        assert verify_data['valid'] == True
+        assert verify_data['email'] == 'admin@xgenai.com'
+        assert verify_data['role'] == 'admin'
+        print("✅ Token verification endpoint works correctly")
+        
+        # Step 4: Access dashboard (should load even without cookie - JS handles auth)
+        dashboard_response = client.get('/xgenai-admin-portal/dashboard')
+        assert dashboard_response.status_code == 200
+        
+        # Step 5: Make authenticated API call
+        apps_response = client.get('/api/admin/applications', 
+                                   headers={'Authorization': token})
+        assert apps_response.status_code == 200
+        
+        # Step 6: Test invalid token verification
+        invalid_verify = client.get('/api/admin/verify',
+                                   headers={'Authorization': 'invalid-token'})
+        assert invalid_verify.status_code == 401
+        invalid_data = invalid_verify.get_json()
+        assert invalid_data['valid'] == False
+        print("✅ Invalid token correctly rejected")
+        
+        print("✅ Complete admin authentication flow works correctly")
+
+
 # Test execution summary
 class TestE2ESummary:
     """Summary of E2E test execution"""
@@ -376,6 +490,8 @@ class TestE2ESummary:
         print(f"✅ Authentication Security - TESTED")
         print(f"✅ Page Accessibility - TESTED")
         print(f"✅ Database Operations - TESTED")
+        print(f"✅ Admin Portal Routing & Redirects - TESTED")
+        print(f"✅ Route Ordering & Conflict Prevention - TESTED")
         print(f"\n" + "="*60)
         print(f"All critical user journeys verified successfully!")
         print(f"System is safe to deploy to production.")

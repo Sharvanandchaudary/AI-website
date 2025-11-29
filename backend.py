@@ -747,6 +747,24 @@ def admin_logout():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/admin/verify', methods=['GET', 'POST'])
+def admin_verify():
+    """Verify admin authentication token"""
+    try:
+        token = request.cookies.get('admin_token') or request.headers.get('Authorization')
+        if verify_admin_token(token):
+            session_data = admin_sessions.get(token, {})
+            return jsonify({
+                'valid': True,
+                'email': session_data.get('email'),
+                'role': session_data.get('role')
+            }), 200
+        else:
+            return jsonify({'valid': False}), 401
+    except Exception as e:
+        print(f"Error verifying admin token: {e}")
+        return jsonify({'valid': False, 'error': str(e)}), 401
+
 @app.route('/api/login', methods=['POST'])
 def login():
     """Login user"""
