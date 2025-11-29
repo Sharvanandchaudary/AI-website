@@ -1,6 +1,6 @@
 # Flask Backend for AI Solutions Website
 # This server handles user authentication and email notifications
-# Version: 2.1.1 - Admin portal with token verification
+# Version: 2.1.2 - Fixed Bearer token authentication for admin endpoints
 
 from flask import Flask, request, jsonify, send_from_directory, redirect
 from flask_cors import CORS
@@ -521,11 +521,18 @@ def health_check():
         cursor = conn.cursor()
         cursor.execute('SELECT 1')
         cursor.fetchone()
+        
+        # Also check application count
+        cursor.execute('SELECT COUNT(*) FROM applications')
+        app_count = cursor.fetchone()[0]
+        
         conn.close()
         return jsonify({
             'status': 'healthy',
             'database': 'PostgreSQL' if USE_POSTGRES else 'SQLite',
-            'connection': 'ok'
+            'connection': 'ok',
+            'applications_count': app_count,
+            'version': '2.1.2'
         }), 200
     except Exception as e:
         return jsonify({
