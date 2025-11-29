@@ -647,6 +647,12 @@ def test_submit_page():
     response = send_from_directory('.', 'test-submit.html')
     return add_security_headers(response)
 
+@app.route('/apply-simple.html')
+def apply_simple_page():
+    """Serve simple application page"""
+    response = send_from_directory('.', 'apply-simple.html')
+    return add_security_headers(response)
+
 # ============================================================================
 # API ROUTES
 # ============================================================================

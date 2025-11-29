@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Application Form - XGENAI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background: #0a0a0a;
+            color: white;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #4CAF50;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #e5e5e5;
+            font-weight: bold;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #444;
+            border-radius: 8px;
+            background: #1a1a1a;
+            color: white;
+            font-size: 16px;
+        }
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        .status {
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            display: none;
+        }
+        .status.show {
+            display: block;
+        }
+        .status.success {
+            background: #4CAF50;
+        }
+        .status.error {
+            background: #f44336;
+        }
+        .debug {
+            background: #2196F3;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Simple Application Form</h1>
+        
+        <div class="debug">
+            <strong>🔍 Debug Info:</strong><br>
+            API URL: <span id="apiUrl"></span><br>
+            Form Status: <span id="formStatus">Checking...</span><br>
+            Position: <span id="positionInfo"></span>
+        </div>
+
+        <div id="statusMessage" class="status"></div>
+
+        <form id="simpleForm">
+            <input type="hidden" id="position" name="position" value="AI Intern">
+
+            <div class="form-group">
+                <label for="fullName">Full Name *</label>
+                <input type="text" id="fullName" name="fullName" required placeholder="John Doe">
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email *</label>
+                <input type="email" id="email" name="email" required placeholder="john@example.com">
+            </div>
+
+            <div class="form-group">
+                <label for="phone">Phone *</label>
+                <input type="tel" id="phone" name="phone" required placeholder="+1234567890">
+            </div>
+
+            <div class="form-group">
+                <label for="address">Address *</label>
+                <textarea id="address" name="address" required placeholder="123 Main St, City, Country"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="college">College/University *</label>
+                <input type="text" id="college" name="college" required placeholder="MIT">
+            </div>
+
+            <div class="form-group">
+                <label for="degree">Degree *</label>
+                <input type="text" id="degree" name="degree" required placeholder="B.Tech in CS">
+            </div>
+
+            <div class="form-group">
+                <label for="semester">Current Semester *</label>
+                <input type="text" id="semester" name="semester" required placeholder="6">
+            </div>
+
+            <div class="form-group">
+                <label for="year">Graduation Year *</label>
+                <input type="text" id="year" name="year" required placeholder="2025">
+            </div>
+
+            <div class="form-group">
+                <label for="about">About Yourself *</label>
+                <textarea id="about" name="about" required placeholder="Tell us about yourself..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="linkedin">LinkedIn (Optional)</label>
+                <input type="url" id="linkedin" name="linkedin" placeholder="https://linkedin.com/in/yourprofile">
+            </div>
+
+            <div class="form-group">
+                <label for="github">GitHub (Optional)</label>
+                <input type="url" id="github" name="github" placeholder="https://github.com/yourusername">
+            </div>
+
+            <button type="submit" id="submitBtn">Submit Application</button>
+        </form>
+    </div>
+
+    <script>
+        console.log('🚀 Script loaded successfully!');
+        
+        const API_URL = window.location.origin;
+        document.getElementById('apiUrl').textContent = API_URL;
+
+        // Get position from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const jobId = urlParams.get('job');
+        const jobMap = {
+            'job1': 'AI Intern',
+            'job2': 'Machine Learning Intern',
+            'job3': 'MedTech Intern',
+            'job4': 'Software Developer Intern',
+            'job5': 'Data Analyst Intern',
+            'job6': 'ML Data Engineer Intern'
+        };
+        const position = jobMap[jobId] || 'AI Intern';
+        document.getElementById('position').value = position;
+        document.getElementById('positionInfo').textContent = position;
+
+        const form = document.getElementById('simpleForm');
+        const statusDiv = document.getElementById('statusMessage');
+        
+        if (form) {
+            document.getElementById('formStatus').textContent = '✅ Found';
+            console.log('✅ Form found:', form);
+            
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                console.log('📝 Form submitted!');
+
+                const submitBtn = document.getElementById('submitBtn');
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Submitting...';
+                
+                statusDiv.className = 'status';
+                statusDiv.textContent = '';
+
+                try {
+                    const formData = new FormData(form);
+                    const applicationData = {
+                        position: formData.get('position') || position,
+                        fullName: formData.get('fullName'),
+                        email: formData.get('email'),
+                        phone: formData.get('phone'),
+                        address: formData.get('address'),
+                        college: formData.get('college'),
+                        degree: formData.get('degree'),
+                        semester: formData.get('semester'),
+                        year: formData.get('year'),
+                        about: formData.get('about'),
+                        resumeName: 'resume.pdf',
+                        linkedin: formData.get('linkedin') || '',
+                        github: formData.get('github') || ''
+                    };
+
+                    console.log('📤 Sending data:', applicationData);
+
+                    const response = await fetch(`${API_URL}/api/applications`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(applicationData)
+                    });
+
+                    console.log('📥 Response status:', response.status);
+                    const result = await response.json();
+                    console.log('📥 Response data:', result);
+
+                    if (response.ok && result.success) {
+                        statusDiv.className = 'status success show';
+                        statusDiv.innerHTML = `
+                            ✅ SUCCESS!<br>
+                            Application ID: ${result.application_id}<br>
+                            ${result.message}
+                        `;
+                        form.reset();
+                        
+                        setTimeout(() => {
+                            window.location.href = '/careers';
+                        }, 3000);
+                    } else {
+                        throw new Error(result.error || 'Submission failed');
+                    }
+
+                } catch (error) {
+                    console.error('❌ Error:', error);
+                    statusDiv.className = 'status error show';
+                    statusDiv.innerHTML = `❌ ERROR: ${error.message}`;
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Submit Application';
+                }
+            });
+        } else {
+            document.getElementById('formStatus').textContent = '❌ NOT Found';
+            console.error('❌ Form not found!');
+        }
+    </script>
+</body>
+</html>
