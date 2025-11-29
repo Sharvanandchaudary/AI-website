@@ -80,21 +80,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const result = await response.json();
 
-            if (response.ok) {
+            if (response.ok && result.success) {
                 // Show success message
-                alert('✅ Application submitted successfully! We will contact you soon.');
+                alert(result.message || '✅ Application submitted successfully! We will contact you soon.');
                 form.reset();
-                // Redirect to careers page after 1.5 seconds
+                
+                // Show a more visible success message
+                const successDiv = document.createElement('div');
+                successDiv.style.cssText = 'position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #10b981; color: white; padding: 20px 40px; border-radius: 12px; font-size: 18px; font-weight: 600; box-shadow: 0 10px 40px rgba(16, 185, 129, 0.4); z-index: 9999;';
+                successDiv.textContent = '✅ Application Submitted Successfully!';
+                document.body.appendChild(successDiv);
+                
+                // Redirect to careers page after 2 seconds
                 setTimeout(() => {
                     window.location.href = '/careers';
-                }, 1500);
+                }, 2000);
             } else {
                 console.error('Application submission error:', result);
                 throw new Error(result.error || 'Failed to submit application');
             }
         } catch (error) {
             console.error('Error submitting application:', error);
-            alert('❌ Failed to submit application: ' + error.message);
+            
+            // Show error message with more details
+            const errorDiv = document.createElement('div');
+            errorDiv.style.cssText = 'position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #ef4444; color: white; padding: 20px 40px; border-radius: 12px; font-size: 16px; font-weight: 600; box-shadow: 0 10px 40px rgba(239, 68, 68, 0.4); z-index: 9999; max-width: 500px; text-align: center;';
+            errorDiv.innerHTML = `❌ Failed to submit application<br><small style="font-size: 14px; font-weight: 400; margin-top: 8px; display: block;">${error.message}</small>`;
+            document.body.appendChild(errorDiv);
+            
+            setTimeout(() => {
+                errorDiv.remove();
+            }, 5000);
+            
             submitBtn.disabled = false;
             submitBtn.textContent = originalText;
         }
