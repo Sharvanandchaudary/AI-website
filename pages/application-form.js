@@ -38,13 +38,17 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const formData = new FormData(form);
             
-            // Get position from URL or form
-            const position = getJobTitle();
+            // Get position from hidden field or URL
+            const position = formData.get('position') || getJobTitle();
+            
+            // Get resume file name
+            const resumeFile = formData.get('resume');
+            const resumeName = resumeFile && resumeFile.name ? resumeFile.name : 'resume.pdf';
             
             // Prepare application data with proper field mapping
             const applicationData = {
                 position: position,
-                fullName: formData.get('fullName') || formData.get('name') || '',
+                fullName: formData.get('fullName') || '',
                 email: formData.get('email') || '',
                 phone: formData.get('phone') || '',
                 address: formData.get('address') || '',
@@ -52,8 +56,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 degree: formData.get('degree') || '',
                 semester: formData.get('semester') || '',
                 year: formData.get('year') || '',
-                about: formData.get('about') || formData.get('message') || `Applying for ${position}`,
-                resumeName: formData.get('resume')?.name || 'resume.pdf',
+                about: formData.get('about') || `Applying for ${position}`,
+                resumeName: resumeName,
                 linkedin: formData.get('linkedin') || '',
                 github: formData.get('github') || ''
             };
@@ -62,11 +66,14 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('Application data:', applicationData);
 
             // Validate required fields
-            const requiredFields = ['fullName', 'email', 'phone', 'address', 'college', 'degree', 'semester', 'year'];
+            const requiredFields = ['fullName', 'email', 'phone', 'address', 'college', 'degree', 'semester', 'year', 'about'];
             const missingFields = requiredFields.filter(field => !applicationData[field]);
             
             if (missingFields.length > 0) {
-                throw new Error(`Please fill in all required fields: ${missingFields.join(', ')}`);
+                alert(`Please fill in all required fields: ${missingFields.join(', ')}`);
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+                return;
             }
 
             // Submit application
@@ -78,12 +85,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify(applicationData)
             });
 
+            console.log('Response status:', response.status);
             const result = await response.json();
+            console.log('Response result:', result);
 
             if (response.ok && result.success) {
                 // Show success message
-                alert(result.message || '✅ Application submitted successfully! We will contact you soon.');
-                form.reset();
+                console.log('✅ Application submitted successfully!');
                 
                 // Show a more visible success message
                 const successDiv = document.createElement('div');
@@ -91,13 +99,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 successDiv.textContent = '✅ Application Submitted Successfully!';
                 document.body.appendChild(successDiv);
                 
+                form.reset();
+                
                 // Redirect to careers page after 2 seconds
                 setTimeout(() => {
                     window.location.href = '/careers';
                 }, 2000);
             } else {
                 console.error('Application submission error:', result);
-                throw new Error(result.error || 'Failed to submit application');
+                throw new Error(result.error || result.message || 'Failed to submit application');
             }
         } catch (error) {
             console.error('Error submitting application:', error);
