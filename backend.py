@@ -516,7 +516,11 @@ def apply_page():
 @app.route('/admin/login')
 def admin_login_page():
     """Serve admin login page"""
-    return send_from_directory('.', 'admin-login.html')
+    response = send_from_directory('.', 'admin-login.html')
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 @app.route('/admin')
 def admin_page():
@@ -524,8 +528,13 @@ def admin_page():
     # Check for admin token in cookie/header
     token = request.cookies.get('admin_token') or request.headers.get('Authorization')
     if not verify_admin_token(token):
-        return send_from_directory('.', 'admin-login.html')
-    return send_from_directory('.', 'admin.html')
+        response = send_from_directory('.', 'admin-login.html')
+    else:
+        response = send_from_directory('.', 'admin.html')
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 @app.route('/<path:path>')
 def serve_static(path):
