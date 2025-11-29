@@ -1442,9 +1442,11 @@ def intern_dashboard_page():
     """Serve intern dashboard page"""
     return send_from_directory('.', 'intern-dashboard.html')
 
-@app.route('/api/intern/login', methods=['POST'])
+@app.route('/api/intern/login', methods=['POST', 'OPTIONS'])
 def intern_login():
     """Intern login endpoint"""
+    if request.method == 'OPTIONS':
+        return '', 204
     try:
         data = request.json
         email = data.get('email')
@@ -1556,9 +1558,12 @@ def intern_logout():
 
 # INTERN DASHBOARD APIs
 
-@app.route('/api/intern/dashboard', methods=['GET'])
+@app.route('/api/intern/dashboard', methods=['GET', 'OPTIONS'])
 def get_intern_dashboard():
     """Get intern dashboard data"""
+    if request.method == 'OPTIONS':
+        return '', 204
+    
     try:
         token = request.cookies.get('intern_token') or request.headers.get('Authorization')
         intern_data = verify_intern_token(token)
@@ -1682,9 +1687,12 @@ def get_intern_dashboard():
         print(f"❌ Error fetching dashboard: {e}")
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/intern/submit-task', methods=['POST'])
+@app.route('/api/intern/submit-task', methods=['POST', 'OPTIONS'])
 def submit_task():
     """Submit a task with file upload"""
+    if request.method == 'OPTIONS':
+        return '', 204
+    
     try:
         token = request.cookies.get('intern_token') or request.headers.get('Authorization')
         intern_data = verify_intern_token(token)
@@ -1736,9 +1744,12 @@ def submit_task():
 
 # ADMIN INTERN MANAGEMENT APIs
 
-@app.route('/api/admin/select-intern', methods=['POST'])
+@app.route('/api/admin/select-intern', methods=['POST', 'OPTIONS'])
 def select_intern():
     """Admin selects an applicant to become an intern"""
+    if request.method == 'OPTIONS':
+        return '', 204
+    
     try:
         token = request.cookies.get('admin_token') or request.headers.get('Authorization')
         if not verify_admin_token(token):
@@ -1821,9 +1832,12 @@ def select_intern():
         print(f"❌ Error selecting intern: {e}")
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/admin/interns', methods=['GET'])
+@app.route('/api/admin/interns', methods=['GET', 'OPTIONS'])
 def get_all_interns():
     """Get all selected interns (admin only)"""
+    if request.method == 'OPTIONS':
+        return '', 204
+    
     try:
         token = request.cookies.get('admin_token') or request.headers.get('Authorization')
         if not verify_admin_token(token):
@@ -1858,9 +1872,12 @@ def get_all_interns():
         print(f"❌ Error fetching interns: {e}")
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/admin/weekly-task', methods=['POST'])
+@app.route('/api/admin/weekly-task', methods=['POST', 'OPTIONS'])
 def create_weekly_task():
     """Admin creates a weekly task"""
+    if request.method == 'OPTIONS':
+        return '', 204
+    
     try:
         token = request.cookies.get('admin_token') or request.headers.get('Authorization')
         if not verify_admin_token(token):
