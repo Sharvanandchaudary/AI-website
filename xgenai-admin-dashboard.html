@@ -61,9 +61,13 @@
             font-weight: 700;
             display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 16px;
             text-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
             letter-spacing: -0.5px;
+        }
+
+        .navbar h1 i {
+            font-size: 32px;
         }
 
         .logout-btn {
@@ -78,6 +82,13 @@
             font-weight: 600;
             transition: all 0.3s;
             font-family: 'Poppins', sans-serif;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logout-btn i {
+            font-size: 18px;
         }
 
         .logout-btn:hover {
@@ -130,7 +141,7 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            font-size: 36px;
+            font-size: 42px;
         }
 
         .page-header p {
@@ -205,10 +216,10 @@
         }
 
         .stat-card .icon {
-            font-size: 56px;
-            margin-bottom: 20px;
+            font-size: 72px;
+            margin-bottom: 24px;
             color: #6366f1;
-            filter: drop-shadow(0 6px 12px rgba(99, 102, 241, 0.5));
+            filter: drop-shadow(0 8px 16px rgba(99, 102, 241, 0.6));
             animation: float 3s ease-in-out infinite;
             position: relative;
             z-index: 1;
@@ -219,6 +230,7 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            display: inline-block;
         }
 
         @keyframes float {
@@ -285,6 +297,10 @@
             font-family: 'Poppins', sans-serif;
         }
 
+        .tab i {
+            font-size: 18px;
+        }
+
         .tab:hover {
             background: rgba(99, 102, 241, 0.15);
             color: #c7d2fe;
@@ -343,13 +359,14 @@
             font-weight: 700;
             display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 16px;
             font-family: 'Poppins', sans-serif;
         }
 
         .section h2 i {
-            color: #8b5cf6;
-            font-size: 24px;
+            color: #a78bfa;
+            font-size: 28px;
+            filter: drop-shadow(0 2px 8px rgba(139, 92, 246, 0.5));
         }
 
         .section h2::before {
@@ -396,8 +413,9 @@
         }
 
         table th i {
-            margin-right: 8px;
+            margin-right: 10px;
             opacity: 0.95;
+            font-size: 15px;
         }
 
         table td {
@@ -441,6 +459,10 @@
             gap: 8px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+        }
+
+        .btn i {
+            font-size: 16px;
         }
 
         .btn-primary {
@@ -502,11 +524,11 @@
         }
 
         .loading i {
-            font-size: 56px;
+            font-size: 64px;
             animation: spin 1s linear infinite;
             color: #8b5cf6;
             margin-bottom: 24px;
-            filter: drop-shadow(0 4px 12px rgba(139, 92, 246, 0.5));
+            filter: drop-shadow(0 6px 16px rgba(139, 92, 246, 0.6));
         }
 
         .loading p {
@@ -527,10 +549,11 @@
         }
 
         .no-data i {
-            font-size: 72px;
-            color: #6366f1;
+            font-size: 80px;
+            color: #8b5cf6;
             margin-bottom: 24px;
-            opacity: 0.6;
+            opacity: 0.7;
+            filter: drop-shadow(0 4px 12px rgba(139, 92, 246, 0.4));
         }
 
         .no-data p {
@@ -665,8 +688,9 @@
             left: 20px;
             top: 50%;
             transform: translateY(-50%);
-            color: #8b5cf6;
-            font-size: 18px;
+            color: #a78bfa;
+            font-size: 22px;
+            filter: drop-shadow(0 2px 4px rgba(139, 92, 246, 0.3));
         }
 
         .form-group textarea {
