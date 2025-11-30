@@ -940,6 +940,7 @@
         }
 
         async function loadStats() {
+            console.log('📊 Loading stats...');
             try {
                 const response = await fetch(`${API_URL}/api/stats`, {
                     headers: {
@@ -947,15 +948,30 @@
                     }
                 });
 
+                console.log('Stats response status:', response.status);
+
                 if (response.ok) {
                     const data = await response.json();
+                    console.log('Stats data:', data);
                     document.getElementById('totalUsers').textContent = data.total_users || 0;
                     document.getElementById('totalApplications').textContent = data.total_applications || 0;
                     document.getElementById('totalInterns').textContent = data.active_interns || 0;
                     document.getElementById('totalEmails').textContent = data.total_emails || 0;
+                } else {
+                    console.error('Stats request failed:', response.status);
+                    // Show 0 if failed
+                    document.getElementById('totalUsers').textContent = '0';
+                    document.getElementById('totalApplications').textContent = '0';
+                    document.getElementById('totalInterns').textContent = '0';
+                    document.getElementById('totalEmails').textContent = '0';
                 }
             } catch (error) {
                 console.error('Error loading stats:', error);
+                // Show 0 on error
+                document.getElementById('totalUsers').textContent = '0';
+                document.getElementById('totalApplications').textContent = '0';
+                document.getElementById('totalInterns').textContent = '0';
+                document.getElementById('totalEmails').textContent = '0';
             }
         }
 

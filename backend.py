@@ -65,57 +65,57 @@ if os.getenv('DATABASE_URL'):
 print(f"All env vars: {', '.join([k for k in os.environ.keys() if not any(x in k.lower() for x in ['key', 'secret', 'password', 'token'])])}")
 print("=" * 60)
 
-# Use PostgreSQL in production - Check for postgres:// or postgresql:// URL
-if DATABASE_URL.startswith('postgres://') or DATABASE_URL.startswith('postgresql://'):
-    # Render uses postgres:// but psycopg2 needs postgresql://
-    if DATABASE_URL.startswith('postgres://'):
-        DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
-    import psycopg2
-    USE_POSTGRES = True
-    print(f"✅ Using PostgreSQL database")
-else:
-    USE_POSTGRES = False
-    DB_NAME = DATABASE_URL
-    print(f"⚠️ Using SQLite database: {DB_NAME}")
-    print(f"⚠️ WARNING: SQLite should only be used for local development!")
-    print(f"⚠️ Set DATABASE_URL environment variable on Render!")
+# Database Configuration - POSTGRESQL ONLY
+DATABASE_URL = os.getenv('DATABASE_URL')
+
+if not DATABASE_URL:
+    print("=" * 60)
+    print("❌ CRITICAL: DATABASE_URL environment variable NOT SET!")
+    print("=" * 60)
+    print("This application requires PostgreSQL.")
+    print("For local development, set DATABASE_URL in your environment.")
+    print("For production (Render/GCP), add DATABASE_URL in environment settings.")
+    print("=" * 60)
+    # Use a default for local testing ONLY
+    DATABASE_URL = "sqlite+memory://aisolutions.db"  # This will fail and show the error
+
+# Fix postgres:// to postgresql:// if needed (Render compatibility)
+if DATABASE_URL.startswith('postgres://'):
+    DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
+
+# Add SSL mode for PostgreSQL if not present
+if DATABASE_URL.startswith('postgresql://'):
+    if '?' not in DATABASE_URL:
+        DATABASE_URL += '?sslmode=require'
+    elif 'sslmode' not in DATABASE_URL:
+        DATABASE_URL += '&sslmode=require'
+
+# Import PostgreSQL driver
+import psycopg2
+
+print(f"✅ Using PostgreSQL ONLY (GCP-ready)")
+print(f"🔌 Database: {DATABASE_URL[:30]}...")
 
 def get_db_connection():
-    """Get database connection (SQLite or PostgreSQL)"""
-    global USE_POSTGRES
+    """Get PostgreSQL database connection - NO SQLite fallback"""
     try:
-        if USE_POSTGRES:
-            print(f"🔌 Connecting to PostgreSQL...")
-            conn = psycopg2.connect(DATABASE_URL)
-            conn.autocommit = False
-            print(f"✅ PostgreSQL connected successfully")
-            return conn
-        else:
-            print(f"🔌 Connecting to SQLite: {DB_NAME}")
-            conn = sqlite3.connect(DB_NAME)
-            print(f"✅ SQLite connected successfully")
-            return conn
+        conn = psycopg2.connect(DATABASE_URL)
+        conn.autocommit = False
+        return conn
     except Exception as e:
-        print(f"❌ Database connection error: {e}")
-        import traceback
-        traceback.print_exc()
-        if USE_POSTGRES:
-            print(f"⚠️ PostgreSQL failed, falling back to SQLite...")
-            USE_POSTGRES = False
-            return sqlite3.connect('aisolutions.db')
-        else:
-            raise
+        print(f"❌ PostgreSQL connection failed: {e}")
+        print(f"💡 Make sure DATABASE_URL is set correctly in environment variables")
+        raise
 
 def init_db():
-    """Initialize the database with required tables"""
-    print("🔧 Initializing database tables...")
+    """Initialize PostgreSQL database tables"""
+    print("🔧 Initializing PostgreSQL database tables...")
     conn = get_db_connection()
     cursor = conn.cursor()
     
     # Users table
-    if USE_POSTGRES:
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS users (
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS users (
                 id SERIAL PRIMARY KEY,
                 name VARCHAR(255) NOT NULL,
                 email VARCHAR(255) UNIQUE NOT NULL,
