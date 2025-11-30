@@ -653,6 +653,25 @@ def apply_simple_page():
     response = send_from_directory('.', 'apply-simple.html')
     return add_security_headers(response)
 
+@app.route('/uploads/<path:filename>')
+def serve_uploaded_file(filename):
+    """Serve uploaded resume files"""
+    try:
+        # Try to serve from uploads directory
+        import os
+        uploads_dir = os.path.join(os.getcwd(), 'uploads')
+        if os.path.exists(os.path.join(uploads_dir, filename)):
+            return send_from_directory(uploads_dir, filename)
+        
+        # If not found in uploads, try current directory
+        if os.path.exists(filename):
+            return send_from_directory('.', filename)
+            
+        return jsonify({'error': 'File not found'}), 404
+    except Exception as e:
+        print(f"❌ Error serving file {filename}: {e}")
+        return jsonify({'error': 'File not found'}), 404
+
 # ============================================================================
 # API ROUTES
 # ============================================================================
