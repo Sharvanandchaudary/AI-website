@@ -619,6 +619,18 @@ def xgenai_admin_portal_dashboard():
     response = send_from_directory('.', 'xgenai-admin-dashboard.html')
     return add_security_headers(response)
 
+@app.route('/signup')
+def signup_page():
+    """User signup page"""
+    response = send_from_directory('pages', 'signup.html')
+    return add_security_headers(response)
+
+@app.route('/pages/signup.html')
+def signup_page_direct():
+    """Direct access to signup page"""
+    response = send_from_directory('pages', 'signup.html')
+    return add_security_headers(response)
+
 # Legacy admin URLs - Redirect to new portal
 @app.route('/admin')
 def admin_page():

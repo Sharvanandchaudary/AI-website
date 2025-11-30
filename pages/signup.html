@@ -303,8 +303,8 @@
 
     <script>
         const API_URL = window.location.hostname === 'localhost' 
-            ? 'http://localhost:5000' 
-            : 'https://ai-website-lzcx.onrender.com';
+            ? 'http://localhost:8080' 
+            : window.location.origin;
 
         const form = document.getElementById('signupForm');
         const submitBtn = document.getElementById('submitBtn');
