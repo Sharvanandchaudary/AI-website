@@ -773,6 +773,49 @@ def serve_uploaded_file(filename):
 # API ROUTES
 # ============================================================================
 
+@app.route('/api/create-account', methods=['POST', 'OPTIONS'])
+def create_account():
+    """Dead simple account creation - PostgreSQL only"""
+    if request.method == 'OPTIONS':
+        return '', 204
+    
+    try:
+        data = request.json
+        name = data['name']
+        email = data['email']
+        phone = data['phone']
+        address = data['address']
+        password = data['password']
+        
+        # Simple password hash
+        pw_hash = hashlib.sha256(password.encode()).hexdigest()
+        
+        # Always use PostgreSQL - required for GCP
+        db_url = os.getenv('DATABASE_URL', 'postgresql://xgenai_db_user:F6x7ohdE2KZ5LMHPfJzQ9muaDkTJY2eC@dpg-d4laq0je5dus73fm14c0-a/xgenai_db')
+        
+        # Fix postgres:// to postgresql:// if needed
+        if db_url.startswith('postgres://'):
+            db_url = db_url.replace('postgres://', 'postgresql://', 1)
+        
+        import psycopg2
+        conn = psycopg2.connect(db_url)
+        cur = conn.cursor()
+        cur.execute(
+            "INSERT INTO users (name, email, phone, address, password_hash, created_at) VALUES (%s, %s, %s, %s, %s, NOW()) RETURNING id",
+            (name, email, phone, address, pw_hash)
+        )
+        user_id = cur.fetchone()[0]
+        conn.commit()
+        conn.close()
+        
+        print(f"✅ Account created in PostgreSQL! User ID: {user_id}")
+        return jsonify({'success': True, 'user_id': user_id, 'message': 'Account created!'}), 201
+    except Exception as e:
+        print(f"❌ Account creation error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 400
+
 @app.route('/api/signup-simple', methods=['POST', 'OPTIONS'])
 def signup_simple():
     """Simple signup - uses current database connection (PostgreSQL or SQLite)"""

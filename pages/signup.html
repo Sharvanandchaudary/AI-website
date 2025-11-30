@@ -421,29 +421,14 @@
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Account...';
 
             try {
-                console.log('Attempting to signup with:', { ...data, password: '***' });
-                console.log('API URL:', API_URL);
+                console.log('Creating account...');
                 
-                // Try simple signup first (always works with SQLite)
-                let response = await fetch(`${API_URL}/api/signup-simple`, {
+                // Use dead simple route
+                const response = await fetch(`${API_URL}/api/create-account`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
                 });
-
-                // If simple signup fails, try regular signup
-                if (!response.ok && response.status === 404) {
-                    console.log('Trying regular signup endpoint...');
-                    response = await fetch(`${API_URL}/api/signup`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(data)
-                    });
-                }
 
                 console.log('Response status:', response.status);
                 
