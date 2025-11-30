@@ -556,6 +556,16 @@ except Exception as e:
 @app.route('/health')
 def health_check():
     """Health check endpoint for monitoring"""
+    return jsonify({
+        'status': 'healthy',
+        'message': 'Server is running!',
+        'database_url_set': 'Yes' if os.getenv('DATABASE_URL') else 'No',
+        'version': '2.1.5'
+    }), 200
+
+@app.route('/api/test-db')
+def test_db():
+    """Test database connection"""
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -568,15 +578,14 @@ def health_check():
         
         conn.close()
         return jsonify({
-            'status': 'healthy',
+            'status': 'success',
             'database': 'PostgreSQL' if USE_POSTGRES else 'SQLite',
             'connection': 'ok',
-            'applications_count': app_count,
-            'version': '2.1.3'
+            'applications_count': app_count
         }), 200
     except Exception as e:
         return jsonify({
-            'status': 'unhealthy',
+            'status': 'error',
             'error': str(e)
         }), 500
 
