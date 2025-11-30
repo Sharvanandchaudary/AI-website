@@ -775,7 +775,7 @@ def serve_uploaded_file(filename):
 
 @app.route('/api/signup-simple', methods=['POST', 'OPTIONS'])
 def signup_simple():
-    """Simple signup - always uses SQLite, no PostgreSQL"""
+    """Simple signup - uses current database connection (PostgreSQL or SQLite)"""
     if request.method == 'OPTIONS':
         return '', 204
     
@@ -794,15 +794,17 @@ def signup_simple():
                 print(f"❌ Missing field: {field}")
                 return jsonify({'error': f'{field} is required'}), 400
         
-        # Use SQLite directly - no PostgreSQL complexity
-        db_file = 'aisolutions.db'
-        print(f"💾 Using database: {db_file}")
+        # Use the configured database (PostgreSQL or SQLite)
+        print(f"💾 Using database: {'PostgreSQL' if USE_POSTGRES else 'SQLite'}")
         
-        conn = sqlite3.connect(db_file)
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         # Check if user exists
-        cursor.execute('SELECT id FROM users WHERE email = ?', (data['email'],))
+        if USE_POSTGRES:
+            cursor.execute('SELECT id FROM users WHERE email = %s', (data['email'],))
+        else:
+            cursor.execute('SELECT id FROM users WHERE email = ?', (data['email'],))
         existing = cursor.fetchone()
         
         if existing:
@@ -815,19 +817,34 @@ def signup_simple():
         print(f"🔐 Password hashed")
         
         # Insert user
-        cursor.execute('''
-            INSERT INTO users (name, email, phone, address, password_hash, created_at)
-            VALUES (?, ?, ?, ?, ?, ?)
-        ''', (
-            data['name'],
-            data['email'],
-            data['phone'],
-            data['address'],
-            password_hash,
-            datetime.now()
-        ))
+        if USE_POSTGRES:
+            cursor.execute('''
+                INSERT INTO users (name, email, phone, address, password_hash, created_at)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                RETURNING id
+            ''', (
+                data['name'],
+                data['email'],
+                data['phone'],
+                data['address'],
+                password_hash,
+                datetime.now()
+            ))
+            user_id = cursor.fetchone()[0]
+        else:
+            cursor.execute('''
+                INSERT INTO users (name, email, phone, address, password_hash, created_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (
+                data['name'],
+                data['email'],
+                data['phone'],
+                data['address'],
+                password_hash,
+                datetime.now()
+            ))
+            user_id = cursor.lastrowid
         
-        user_id = cursor.lastrowid
         conn.commit()
         conn.close()
         
