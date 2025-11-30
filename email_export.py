@@ -8,7 +8,19 @@ import sys
 from datetime import datetime
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment
-from backend import get_db_connection, USE_POSTGRES
+
+# Database configuration
+DATABASE_URL = os.getenv('DATABASE_URL')
+USE_POSTGRES = DATABASE_URL is not None
+
+def get_db_connection():
+    """Get database connection"""
+    if USE_POSTGRES:
+        import psycopg2
+        return psycopg2.connect(DATABASE_URL)
+    else:
+        import sqlite3
+        return sqlite3.connect('aisolutions.db')
 
 def create_excel_with_style(filename, headers, data):
     """Create a styled Excel file"""
