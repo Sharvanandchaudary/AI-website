@@ -44,6 +44,13 @@ jobs:
         pytest tests/test_basic.py -v --cov=. --cov-report=html --cov-report=term --html=unit-test-report.html --self-contained-html
       continue-on-error: false
     
+    - name: Run User Signup Tests
+      run: |
+        echo "👤 Running user signup and dashboard tests..."
+        pytest tests/test_user_signup.py -v --cov=backend --cov-report=term --html=user-signup-test-report.html --self-contained-html
+        echo "✅ User signup tests completed"
+      continue-on-error: false
+    
     - name: Run End-to-End Tests (Critical Flow Validation)
       run: |
         echo "🔄 Running E2E tests to validate complete application flows..."
@@ -64,6 +71,7 @@ jobs:
         name: test-results
         path: |
           unit-test-report.html
+          user-signup-test-report.html
           e2e-test-report.html
           htmlcov/
     
@@ -90,7 +98,10 @@ jobs:
       if: always()
       run: |
         echo "🧪 Test suite completed"
-        echo "📊 Check test-report.html for details"
+        echo "📊 Test Reports:"
+        echo "   - unit-test-report.html (Unit Tests)"
+        echo "   - user-signup-test-report.html (User Signup & Dashboard)"
+        echo "   - e2e-test-report.html (End-to-End Tests)"
 
   deploy:
     name: Deploy to Render
