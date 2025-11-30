@@ -2327,6 +2327,89 @@ def serve_static(path):
     return response
 
 # ============================================================================
+# EXCEL EXPORT ENDPOINTS
+# ============================================================================
+
+@app.route('/api/admin/export/users', methods=['GET'])
+def export_users_now():
+    """Manually trigger user signups export"""
+    try:
+        from email_export import export_user_signups
+        export_user_signups()
+        return jsonify({'success': True, 'message': 'User signups exported successfully'}), 200
+    except Exception as e:
+        print(f"❌ Error exporting users: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/admin/export/applications', methods=['GET'])
+def export_applications_now():
+    """Manually trigger intern applications export"""
+    try:
+        from email_export import export_intern_applications
+        export_intern_applications()
+        return jsonify({'success': True, 'message': 'Intern applications exported successfully'}), 200
+    except Exception as e:
+        print(f"❌ Error exporting applications: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/admin/export/all', methods=['GET'])
+def export_all_now():
+    """Manually trigger all exports"""
+    try:
+        from email_export import main as export_main
+        export_main()
+        return jsonify({'success': True, 'message': 'All data exported successfully'}), 200
+    except Exception as e:
+        print(f"❌ Error exporting data: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/admin/export/files', methods=['GET'])
+def list_export_files():
+    """List all available export files"""
+    try:
+        export_dir = 'exports'
+        if not os.path.exists(export_dir):
+            return jsonify({'files': []}), 200
+        
+        files = []
+        for filename in os.listdir(export_dir):
+            if filename.endswith('.xlsx'):
+                filepath = os.path.join(export_dir, filename)
+                stat = os.stat(filepath)
+                files.append({
+                    'name': filename,
+                    'size': stat.st_size,
+                    'created': datetime.fromtimestamp(stat.st_mtime).isoformat(),
+                    'type': 'users' if 'user_signups' in filename else 'applications'
+                })
+        
+        # Sort by creation date, newest first
+        files.sort(key=lambda x: x['created'], reverse=True)
+        return jsonify({'files': files}), 200
+    except Exception as e:
+        print(f"❌ Error listing export files: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/admin/export/download/<filename>', methods=['GET'])
+def download_export_file(filename):
+    """Download a specific export file"""
+    try:
+        export_dir = 'exports'
+        filepath = os.path.join(export_dir, filename)
+        
+        # Security check: ensure filename doesn't contain path traversal
+        if '..' in filename or '/' in filename or '\\' in filename:
+            return jsonify({'error': 'Invalid filename'}), 400
+        
+        if not os.path.exists(filepath):
+            return jsonify({'error': 'File not found'}), 404
+        
+        return send_file(filepath, as_attachment=True, download_name=filename)
+    except Exception as e:
+        print(f"❌ Error downloading export file: {e}")
+        return jsonify({'error': str(e)}), 500
+
+# ============================================================================
 # SERVER INITIALIZATION
 # ============================================================================
 
