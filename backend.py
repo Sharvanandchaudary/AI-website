@@ -2,7 +2,8 @@
 # This server handles user authentication and email notifications
 # Version: 2.1.3 - Enhanced email sending for applications and improved admin dashboard
 
-from flask import Flask, request, jsonify, send_from_directory, redirect
+from flask import Flask, request, jsonify, send_from_directory, redirect, send_file
+from io import BytesIO
 from flask_cors import CORS
 from flask_mail import Mail, Message
 import sqlite3
@@ -211,6 +212,7 @@ def init_db():
                 year VARCHAR(50) NOT NULL,
                 about TEXT NOT NULL,
                 resume_name VARCHAR(255) NOT NULL,
+                resume_data BYTEA,
                 linkedin VARCHAR(500),
                 github VARCHAR(500),
                 status VARCHAR(50) DEFAULT 'pending',
@@ -232,6 +234,7 @@ def init_db():
                 year TEXT NOT NULL,
                 about TEXT NOT NULL,
                 resume_name TEXT NOT NULL,
+                resume_data BLOB,
                 linkedin TEXT,
                 github TEXT,
                 status TEXT DEFAULT 'pending',
@@ -653,9 +656,49 @@ def apply_simple_page():
     response = send_from_directory('.', 'apply-simple.html')
     return add_security_headers(response)
 
+@app.route('/api/applications/<int:application_id>/resume', methods=['GET'])
+def download_resume(application_id):
+    """Download resume file from database"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Fetch resume data from database
+        if USE_POSTGRES:
+            cursor.execute('SELECT resume_name, resume_data FROM applications WHERE id = %s', (application_id,))
+        else:
+            cursor.execute('SELECT resume_name, resume_data FROM applications WHERE id = ?', (application_id,))
+        
+        row = cursor.fetchone()
+        conn.close()
+        
+        if not row:
+            return jsonify({'error': 'Application not found'}), 404
+        
+        resume_name, resume_data = row
+        
+        if not resume_data:
+            return jsonify({'error': 'Resume file not available'}), 404
+        
+        # Create BytesIO object from binary data
+        file_stream = BytesIO(resume_data)
+        file_stream.seek(0)
+        
+        # Send file with proper headers
+        return send_file(
+            file_stream,
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name=resume_name
+        )
+        
+    except Exception as e:
+        print(f"❌ Error downloading resume: {e}")
+        return jsonify({'error': 'Failed to download resume'}), 500
+
 @app.route('/uploads/<path:filename>')
 def serve_uploaded_file(filename):
-    """Serve uploaded resume files"""
+    """Serve uploaded resume files (deprecated - kept for backward compatibility)"""
     try:
         # Try to serve from uploads directory
         import os
@@ -1270,18 +1313,50 @@ def get_all_admin_data():
 
 @app.route('/api/applications', methods=['POST', 'OPTIONS'])
 def submit_application():
-    """Submit job application"""
+    """Submit job application with file upload"""
     if request.method == 'OPTIONS':
         return '', 204
     
     try:
-        data = request.json
-        
-        print(f"📝 Received application data: {data}")
+        # Check if this is multipart/form-data (with file) or JSON (backward compatibility)
+        if request.content_type and 'multipart/form-data' in request.content_type:
+            # Get form data
+            data = request.form.to_dict()
+            
+            # Get resume file
+            if 'resume' not in request.files:
+                return jsonify({'error': 'No resume file uploaded'}), 400
+            
+            resume_file = request.files['resume']
+            
+            if resume_file.filename == '':
+                return jsonify({'error': 'No resume file selected'}), 400
+            
+            # Validate file type (PDF only)
+            if not resume_file.filename.lower().endswith('.pdf'):
+                return jsonify({'error': 'Only PDF files are allowed'}), 400
+            
+            # Read file data
+            resume_data = resume_file.read()
+            
+            # Validate file size (10MB limit)
+            if len(resume_data) > 10 * 1024 * 1024:
+                return jsonify({'error': 'File size exceeds 10MB limit'}), 400
+            
+            resume_name = resume_file.filename
+            
+            print(f"📝 Received application with file: {resume_name} ({len(resume_data)} bytes)")
+        else:
+            # Backward compatibility: JSON without file
+            data = request.json
+            resume_data = None
+            resume_name = data.get('resumeName', 'resume.pdf')
+            
+            print(f"📝 Received application data (no file): {data}")
         
         # Validate required fields
         required_fields = ['position', 'fullName', 'email', 'phone', 'address', 
-                          'college', 'degree', 'semester', 'year', 'about', 'resumeName']
+                          'college', 'degree', 'semester', 'year', 'about']
         
         missing_fields = []
         for field in required_fields:
@@ -1297,19 +1372,19 @@ def submit_application():
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # Insert application
+        # Insert application with resume data
         if USE_POSTGRES:
             print("📊 Using PostgreSQL database")
             cursor.execute('''
                 INSERT INTO applications 
                 (position, full_name, email, phone, address, college, degree, 
-                 semester, year, about, resume_name, linkedin, github, applied_at, status)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                 semester, year, about, resume_name, resume_data, linkedin, github, applied_at, status)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 RETURNING id
             ''', (
                 data['position'], data['fullName'], data['email'], data['phone'],
                 data['address'], data['college'], data['degree'], data['semester'],
-                data['year'], data['about'], data['resumeName'],
+                data['year'], data['about'], resume_name, resume_data,
                 data.get('linkedin', ''), data.get('github', ''),
                 datetime.now(), 'pending'
             ))
@@ -1319,12 +1394,12 @@ def submit_application():
             cursor.execute('''
                 INSERT INTO applications 
                 (position, full_name, email, phone, address, college, degree, 
-                 semester, year, about, resume_name, linkedin, github, applied_at, status)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 semester, year, about, resume_name, resume_data, linkedin, github, applied_at, status)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 data['position'], data['fullName'], data['email'], data['phone'],
                 data['address'], data['college'], data['degree'], data['semester'],
-                data['year'], data['about'], data['resumeName'],
+                data['year'], data['about'], resume_name, resume_data,
                 data.get('linkedin', ''), data.get('github', ''),
                 datetime.now(), 'pending'
             ))

@@ -135,32 +135,50 @@
                     // Get position from hidden field
                     const position = formData.get('position') || 'General Application';
                     
-                    // Get resume file name
+                    // Validate resume file
                     const resumeFile = formData.get('resume');
-                    const resumeName = resumeFile && resumeFile.name ? resumeFile.name : 'resume.pdf';
+                    if (!resumeFile || !resumeFile.name) {
+                        alert('⚠️ Please select a resume file');
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = originalText;
+                        return;
+                    }
                     
-                    // Prepare application data
-                    const applicationData = {
-                        position: position,
-                        fullName: formData.get('fullName') || '',
-                        email: formData.get('email') || '',
-                        phone: formData.get('phone') || '',
-                        address: formData.get('address') || '',
-                        college: formData.get('college') || '',
-                        degree: formData.get('degree') || '',
-                        semester: formData.get('semester') || '',
-                        year: formData.get('year') || '',
-                        about: formData.get('about') || '',
-                        resumeName: resumeName,
-                        linkedin: formData.get('linkedin') || '',
-                        github: formData.get('github') || ''
+                    // Validate file type
+                    if (!resumeFile.name.toLowerCase().endsWith('.pdf')) {
+                        alert('⚠️ Only PDF files are allowed for resume');
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = originalText;
+                        return;
+                    }
+                    
+                    // Validate file size (10MB)
+                    if (resumeFile.size > 10 * 1024 * 1024) {
+                        alert('⚠️ Resume file must be less than 10MB');
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = originalText;
+                        return;
+                    }
+                    
+                    // Validate other required fields
+                    const requiredFields = {
+                        'fullName': 'Full Name',
+                        'email': 'Email',
+                        'phone': 'Phone',
+                        'address': 'Address',
+                        'college': 'College',
+                        'degree': 'Degree',
+                        'semester': 'Semester',
+                        'year': 'Year',
+                        'about': 'About'
                     };
-
-                    console.log('📤 Submitting application:', applicationData);
-
-                    // Validate required fields
-                    const requiredFields = ['fullName', 'email', 'phone', 'address', 'college', 'degree', 'semester', 'year', 'about'];
-                    const missingFields = requiredFields.filter(field => !applicationData[field]);
+                    
+                    const missingFields = [];
+                    for (const [field, label] of Object.entries(requiredFields)) {
+                        if (!formData.get(field) || formData.get(field).trim() === '') {
+                            missingFields.push(label);
+                        }
+                    }
                     
                     if (missingFields.length > 0) {
                         alert(`⚠️ Please fill in all required fields: ${missingFields.join(', ')}`);
@@ -169,13 +187,28 @@
                         return;
                     }
 
-                    // Submit application
+                    console.log('📤 Submitting application with file:', resumeFile.name, `(${(resumeFile.size / 1024).toFixed(2)} KB)`);
+
+                    // Create new FormData with all fields
+                    const submitData = new FormData();
+                    submitData.append('position', position);
+                    submitData.append('fullName', formData.get('fullName'));
+                    submitData.append('email', formData.get('email'));
+                    submitData.append('phone', formData.get('phone'));
+                    submitData.append('address', formData.get('address'));
+                    submitData.append('college', formData.get('college'));
+                    submitData.append('degree', formData.get('degree'));
+                    submitData.append('semester', formData.get('semester'));
+                    submitData.append('year', formData.get('year'));
+                    submitData.append('about', formData.get('about'));
+                    submitData.append('linkedin', formData.get('linkedin') || '');
+                    submitData.append('github', formData.get('github') || '');
+                    submitData.append('resume', resumeFile);
+
+                    // Submit application with file
                     const response = await fetch(`${API_URL}/api/applications`, {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(applicationData)
+                        body: submitData  // Send as multipart/form-data
                     });
 
                     console.log('📥 Response status:', response.status);
