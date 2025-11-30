@@ -1033,13 +1033,15 @@
                             <div style="margin-bottom: 16px;">
                                 <p style="margin-bottom: 8px; color: #475569;"><strong style="color: #1e293b;">Resume:</strong> ${resumeName || 'Not uploaded'}</p>
                                 ${resumeName ? 
-                                    `<a href="${API_URL}/api/applications/${app.id}/resume" 
-                                        download="${resumeName}"
-                                        style="display: inline-flex; align-items: center; padding: 10px 18px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; border-radius: 8px; text-decoration: none; font-weight: 500; margin-top: 8px; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);"
+                                    `<button onclick="downloadResume(${app.id}, '${resumeName}')" 
+                                        style="display: inline-flex; align-items: center; padding: 10px 18px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; border-radius: 8px; border: none; cursor: pointer; font-weight: 500; margin-top: 8px; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);"
                                         onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(99, 102, 241, 0.4)';"
                                         onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(99, 102, 241, 0.3)';">
                                         <i class="fas fa-download" style="margin-right: 8px;"></i> Download Resume
-                                    </a>` : 
+                                    </button>
+                                    <p style="margin-top: 8px; padding: 10px; background: #fef3c7; border: 1px solid #fbbf24; border-radius: 8px; color: #92400e; font-size: 12px;">
+                                        <i class="fas fa-info-circle"></i> Note: Applications submitted before file storage was enabled may not have downloadable files.
+                                    </p>` : 
                                     ''
                                 }
                             </div>
@@ -1065,6 +1067,44 @@
             `;
             
             document.body.insertAdjacentHTML('beforeend', modalHtml);
+        }
+
+        async function downloadResume(appId, filename) {
+            try {
+                const response = await fetch(`${API_URL}/api/applications/${appId}/resume`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    alert(error.error || 'Failed to download resume');
+                    return;
+                }
+
+                // Get the file blob
+                const blob = await response.blob();
+                
+                // Create a temporary URL for the blob
+                const url = window.URL.createObjectURL(blob);
+                
+                // Create a temporary link and trigger download
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                
+                // Clean up
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+            } catch (error) {
+                console.error('Error downloading resume:', error);
+                alert('Failed to download resume. Please try again.');
+            }
         }
 
         async function updateApplicationStatus(appId, newStatus) {

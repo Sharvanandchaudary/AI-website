@@ -656,9 +656,12 @@ def apply_simple_page():
     response = send_from_directory('.', 'apply-simple.html')
     return add_security_headers(response)
 
-@app.route('/api/applications/<int:application_id>/resume', methods=['GET'])
+@app.route('/api/applications/<int:application_id>/resume', methods=['GET', 'OPTIONS'])
 def download_resume(application_id):
     """Download resume file from database"""
+    if request.method == 'OPTIONS':
+        return '', 204
+        
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -678,7 +681,7 @@ def download_resume(application_id):
         resume_name, resume_data = row
         
         if not resume_data:
-            return jsonify({'error': 'Resume file not available'}), 404
+            return jsonify({'error': 'Resume file not uploaded. This application was submitted before file storage was enabled. Please contact the applicant directly.'}), 404
         
         # Create BytesIO object from binary data
         file_stream = BytesIO(resume_data)
@@ -694,7 +697,9 @@ def download_resume(application_id):
         
     except Exception as e:
         print(f"❌ Error downloading resume: {e}")
-        return jsonify({'error': 'Failed to download resume'}), 500
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': f'Failed to download resume: {str(e)}'}), 500
 
 @app.route('/uploads/<path:filename>')
 def serve_uploaded_file(filename):
