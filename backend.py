@@ -773,6 +773,80 @@ def serve_uploaded_file(filename):
 # API ROUTES
 # ============================================================================
 
+@app.route('/api/signup-simple', methods=['POST', 'OPTIONS'])
+def signup_simple():
+    """Simple signup - always uses SQLite, no PostgreSQL"""
+    if request.method == 'OPTIONS':
+        return '', 204
+    
+    print("=" * 60)
+    print("📝 SIMPLE SIGNUP REQUEST RECEIVED")
+    print("=" * 60)
+    
+    try:
+        data = request.json
+        print(f"📥 Data received: {data.get('name')} - {data.get('email')}")
+        
+        # Validate required fields
+        required_fields = ['name', 'email', 'phone', 'address', 'password']
+        for field in required_fields:
+            if field not in data or not data[field]:
+                print(f"❌ Missing field: {field}")
+                return jsonify({'error': f'{field} is required'}), 400
+        
+        # Use SQLite directly - no PostgreSQL complexity
+        db_file = 'aisolutions.db'
+        print(f"💾 Using database: {db_file}")
+        
+        conn = sqlite3.connect(db_file)
+        cursor = conn.cursor()
+        
+        # Check if user exists
+        cursor.execute('SELECT id FROM users WHERE email = ?', (data['email'],))
+        existing = cursor.fetchone()
+        
+        if existing:
+            print(f"⚠️ User already exists: {data['email']}")
+            conn.close()
+            return jsonify({'error': 'User with this email already exists'}), 400
+        
+        # Hash password
+        password_hash = hashlib.sha256(data['password'].encode()).hexdigest()
+        print(f"🔐 Password hashed")
+        
+        # Insert user
+        cursor.execute('''
+            INSERT INTO users (name, email, phone, address, password_hash, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', (
+            data['name'],
+            data['email'],
+            data['phone'],
+            data['address'],
+            password_hash,
+            datetime.now()
+        ))
+        
+        user_id = cursor.lastrowid
+        conn.commit()
+        conn.close()
+        
+        print(f"✅ User created successfully! ID: {user_id}")
+        print("=" * 60)
+        
+        return jsonify({
+            'success': True,
+            'message': 'Account created successfully!',
+            'user_id': user_id,
+            'email': data['email']
+        }), 201
+        
+    except Exception as e:
+        print(f"❌ ERROR: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/signup', methods=['POST', 'OPTIONS'])
 def signup():
     """Register a new user"""

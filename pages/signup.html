@@ -424,13 +424,26 @@
                 console.log('Attempting to signup with:', { ...data, password: '***' });
                 console.log('API URL:', API_URL);
                 
-                const response = await fetch(`${API_URL}/api/signup`, {
+                // Try simple signup first (always works with SQLite)
+                let response = await fetch(`${API_URL}/api/signup-simple`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify(data)
                 });
+
+                // If simple signup fails, try regular signup
+                if (!response.ok && response.status === 404) {
+                    console.log('Trying regular signup endpoint...');
+                    response = await fetch(`${API_URL}/api/signup`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(data)
+                    });
+                }
 
                 console.log('Response status:', response.status);
                 
