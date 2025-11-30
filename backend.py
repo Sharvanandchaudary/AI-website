@@ -1,6 +1,6 @@
 # Flask Backend for AI Solutions Website
 # This server handles user authentication and email notifications
-# Version: 2.1.4 - Fixed duplicate health endpoint, signup with PostgreSQL file storage
+# Version: 2.1.5 - Docker and email export deployment ready
 
 from flask import Flask, request, jsonify, send_from_directory, redirect, send_file
 from io import BytesIO
