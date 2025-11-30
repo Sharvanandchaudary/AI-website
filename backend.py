@@ -790,16 +790,28 @@ def create_account():
         # Simple password hash
         pw_hash = hashlib.sha256(password.encode()).hexdigest()
         
-        # Always use PostgreSQL - required for GCP
-        db_url = os.getenv('DATABASE_URL', 'postgresql://xgenai_db_user:F6x7ohdE2KZ5LMHPfJzQ9muaDkTJY2eC@dpg-d4laq0je5dus73fm14c0-a/xgenai_db')
+        # Get DATABASE_URL from environment (Render will set this automatically)
+        db_url = os.getenv('DATABASE_URL')
+        
+        if not db_url:
+            return jsonify({'error': 'DATABASE_URL not configured on server'}), 500
         
         # Fix postgres:// to postgresql:// if needed
         if db_url.startswith('postgres://'):
             db_url = db_url.replace('postgres://', 'postgresql://', 1)
         
+        # Add SSL mode if not present
+        if '?' not in db_url:
+            db_url += '?sslmode=require'
+        elif 'sslmode' not in db_url:
+            db_url += '&sslmode=require'
+        
+        print(f"🔌 Connecting to PostgreSQL...")
         import psycopg2
         conn = psycopg2.connect(db_url)
         cur = conn.cursor()
+        
+        print(f"📝 Creating account for: {email}")
         cur.execute(
             "INSERT INTO users (name, email, phone, address, password_hash, created_at) VALUES (%s, %s, %s, %s, %s, NOW()) RETURNING id",
             (name, email, phone, address, pw_hash)
