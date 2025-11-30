@@ -84,15 +84,24 @@ def get_db_connection():
     """Get database connection (SQLite or PostgreSQL)"""
     try:
         if USE_POSTGRES:
+            print(f"🔌 Connecting to PostgreSQL...")
             conn = psycopg2.connect(DATABASE_URL)
             conn.autocommit = False
+            print(f"✅ PostgreSQL connected successfully")
             return conn
         else:
-            return sqlite3.connect(DB_NAME)
+            print(f"🔌 Connecting to SQLite: {DB_NAME}")
+            conn = sqlite3.connect(DB_NAME)
+            print(f"✅ SQLite connected successfully")
+            return conn
     except Exception as e:
         print(f"❌ Database connection error: {e}")
+        import traceback
+        traceback.print_exc()
         if USE_POSTGRES:
-            print(f"⚠️ Falling back to SQLite...")
+            print(f"⚠️ PostgreSQL failed, falling back to SQLite...")
+            global USE_POSTGRES
+            USE_POSTGRES = False
             return sqlite3.connect('aisolutions.db')
         else:
             raise
@@ -779,60 +788,76 @@ def signup():
             if field not in data or not data[field]:
                 return jsonify({'error': f'{field} is required'}), 400
         
-        # Check if user already exists
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        if USE_POSTGRES:
-            cursor.execute('SELECT id FROM users WHERE email = %s', (data['email'],))
-        else:
-            cursor.execute('SELECT id FROM users WHERE email = ?', (data['email'],))
-        existing_user = cursor.fetchone()
-        
-        if existing_user:
-            conn.close()
-            return jsonify({'error': 'User with this email already exists'}), 400
-        
-        # Hash password
-        password_hash = hash_password(data['password'])
-        
-        # Insert new user
-        if USE_POSTGRES:
-            cursor.execute('''
-                INSERT INTO users (name, email, phone, address, password_hash, created_at)
-                VALUES (%s, %s, %s, %s, %s, %s)
-                RETURNING id
-            ''', (data['name'], data['email'], data['phone'], data['address'], password_hash, datetime.now()))
-            user_id = cursor.fetchone()[0]
-        else:
-            cursor.execute('''
-                INSERT INTO users (name, email, phone, address, password_hash)
-                VALUES (?, ?, ?, ?, ?)
-            ''', (data['name'], data['email'], data['phone'], data['address'], password_hash))
-            user_id = cursor.lastrowid
-        
-        conn.commit()
-        conn.close()
-        
-        # Send confirmation email
-        email_data = {
-            'user_id': user_id,
-            'name': data['name'],
-            'email': data['email'],
-            'phone': data['phone'],
-            'address': data['address']
-        }
-        send_confirmation_email(email_data)
-        
-        return jsonify({
-            'message': 'Account created successfully!',
-            'user_id': user_id,
-            'email': data['email']
-        }), 201
+        # Get database connection
+        conn = None
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            
+            # Check if user already exists
+            if USE_POSTGRES:
+                cursor.execute('SELECT id FROM users WHERE email = %s', (data['email'],))
+            else:
+                cursor.execute('SELECT id FROM users WHERE email = ?', (data['email'],))
+            existing_user = cursor.fetchone()
+            
+            if existing_user:
+                conn.close()
+                return jsonify({'error': 'User with this email already exists'}), 400
+            
+            # Hash password
+            password_hash = hash_password(data['password'])
+            
+            # Insert new user
+            if USE_POSTGRES:
+                cursor.execute('''
+                    INSERT INTO users (name, email, phone, address, password_hash, created_at)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                    RETURNING id
+                ''', (data['name'], data['email'], data['phone'], data['address'], password_hash, datetime.now()))
+                user_id = cursor.fetchone()[0]
+            else:
+                cursor.execute('''
+                    INSERT INTO users (name, email, phone, address, password_hash)
+                    VALUES (?, ?, ?, ?, ?)
+                ''', (data['name'], data['email'], data['phone'], data['address'], password_hash))
+                user_id = cursor.lastrowid
+            
+            conn.commit()
+            
+            # Send confirmation email (non-blocking)
+            try:
+                email_data = {
+                    'user_id': user_id,
+                    'name': data['name'],
+                    'email': data['email'],
+                    'phone': data['phone'],
+                    'address': data['address']
+                }
+                send_confirmation_email(email_data)
+            except Exception as email_error:
+                print(f"⚠️ Email send failed (non-critical): {email_error}")
+            
+            return jsonify({
+                'message': 'Account created successfully!',
+                'user_id': user_id,
+                'email': data['email']
+            }), 201
+            
+        except Exception as db_error:
+            print(f"❌ Database error in signup: {db_error}")
+            import traceback
+            traceback.print_exc()
+            return jsonify({'error': f'Database connection error: {str(db_error)}'}), 500
+        finally:
+            if conn:
+                conn.close()
         
     except Exception as e:
         print(f"❌ Signup error: {e}")
-        return jsonify({'error': 'Internal server error'}), 500
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': f'Internal server error: {str(e)}'}), 500
 
 @app.route('/api/admin/login', methods=['POST'])
 def admin_login():
