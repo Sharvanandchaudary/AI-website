@@ -2354,11 +2354,15 @@ def serve_static(path):
 def export_users_now():
     """Manually trigger user signups export"""
     try:
+        print("📤 Starting user export...")
         from email_export import export_user_signups
         export_user_signups()
+        print("✅ User export completed")
         return jsonify({'success': True, 'message': 'User signups exported successfully'}), 200
     except Exception as e:
         print(f"❌ Error exporting users: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/admin/export/applications', methods=['GET'])
