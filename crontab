@@ -1,0 +1,4 @@
+# Run email export daily at 2 AM UTC
+0 2 * * * cd /app && python email_export.py >> /var/log/cron.log 2>&1
+
+# Keep a newline at the end
