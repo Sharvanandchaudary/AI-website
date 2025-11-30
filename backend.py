@@ -2429,6 +2429,9 @@ if __name__ == '__main__':
     # Initialize database
     init_db()
     
+    # Create exports directory if it doesn't exist
+    os.makedirs('exports', exist_ok=True)
+    
     port = int(os.getenv('PORT', 5000))
     debug = not IS_PRODUCTION
     
