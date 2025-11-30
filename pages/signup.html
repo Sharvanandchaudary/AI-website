@@ -421,6 +421,9 @@
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Account...';
 
             try {
+                console.log('Attempting to signup with:', { ...data, password: '***' });
+                console.log('API URL:', API_URL);
+                
                 const response = await fetch(`${API_URL}/api/signup`, {
                     method: 'POST',
                     headers: {
@@ -429,7 +432,10 @@
                     body: JSON.stringify(data)
                 });
 
+                console.log('Response status:', response.status);
+                
                 const result = await response.json();
+                console.log('Response data:', result);
 
                 if (response.ok) {
                     showAlert('Account created successfully! Redirecting to login...', 'success');
@@ -444,7 +450,18 @@
                 }
             } catch (error) {
                 console.error('Signup error:', error);
-                showAlert('Network error. Please try again.', 'error');
+                console.error('Error details:', error.message);
+                
+                let errorMessage = 'Network error. ';
+                if (error.message.includes('Failed to fetch')) {
+                    errorMessage += 'Server is starting up or not reachable. Please wait a moment and try again.';
+                } else if (error.message.includes('CORS')) {
+                    errorMessage += 'CORS error. Please contact support.';
+                } else {
+                    errorMessage += 'Please check your connection and try again.';
+                }
+                
+                showAlert(errorMessage, 'error');
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = '<i class="fas fa-user-plus"></i> Create Account';
             }

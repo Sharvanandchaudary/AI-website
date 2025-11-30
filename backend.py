@@ -744,9 +744,12 @@ def serve_uploaded_file(filename):
 # API ROUTES
 # ============================================================================
 
-@app.route('/api/signup', methods=['POST'])
+@app.route('/api/signup', methods=['POST', 'OPTIONS'])
 def signup():
     """Register a new user"""
+    if request.method == 'OPTIONS':
+        return '', 204
+        
     try:
         data = request.json
         

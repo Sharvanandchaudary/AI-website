@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Server Status - XGenAI</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .status-card {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+
+        .status-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        .status-icon.loading {
+            color: #fbbf24;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        .status-icon.online {
+            color: #10b981;
+        }
+
+        .status-icon.offline {
+            color: #ef4444;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        h1 {
+            color: #1f2937;
+            margin-bottom: 10px;
+        }
+
+        .status-text {
+            color: #6b7280;
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+
+        .details {
+            background: #f3f4f6;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .detail-value {
+            color: #6b7280;
+        }
+
+        .retry-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: transform 0.2s;
+        }
+
+        .retry-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .retry-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .links {
+            margin-top: 20px;
+        }
+
+        .links a {
+            color: #667eea;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+
+        .links a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="status-card">
+        <div id="statusIcon" class="status-icon loading">
+            <i class="fas fa-spinner fa-spin"></i>
+        </div>
+        <h1 id="statusTitle">Checking Server Status...</h1>
+        <p id="statusText" class="status-text">Please wait while we check the server...</p>
+        
+        <div id="details" class="details" style="display: none;">
+            <div class="detail-row">
+                <span class="detail-label">API URL:</span>
+                <span class="detail-value" id="apiUrl">-</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Status:</span>
+                <span class="detail-value" id="serverStatus">-</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Response Time:</span>
+                <span class="detail-value" id="responseTime">-</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Last Checked:</span>
+                <span class="detail-value" id="lastChecked">-</span>
+            </div>
+        </div>
+
+        <button id="retryBtn" class="retry-btn" onclick="checkStatus()" style="display: none;">
+            <i class="fas fa-sync-alt"></i> Check Again
+        </button>
+
+        <div class="links">
+            <a href="signup.html"><i class="fas fa-user-plus"></i> Sign Up</a>
+            <a href="../index.html"><i class="fas fa-sign-in-alt"></i> Login</a>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:5000' 
+            : 'https://ai-website-lzcx.onrender.com';
+
+        const statusIcon = document.getElementById('statusIcon');
+        const statusTitle = document.getElementById('statusTitle');
+        const statusText = document.getElementById('statusText');
+        const details = document.getElementById('details');
+        const retryBtn = document.getElementById('retryBtn');
+
+        async function checkStatus() {
+            // Reset UI
+            statusIcon.className = 'status-icon loading';
+            statusIcon.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            statusTitle.textContent = 'Checking Server Status...';
+            statusText.textContent = 'Please wait while we check the server...';
+            retryBtn.style.display = 'none';
+            details.style.display = 'none';
+
+            const startTime = Date.now();
+
+            try {
+                const response = await fetch(`${API_URL}/`, {
+                    method: 'GET',
+                    cache: 'no-cache'
+                });
+
+                const endTime = Date.now();
+                const responseTime = endTime - startTime;
+
+                if (response.ok) {
+                    // Server is online
+                    statusIcon.className = 'status-icon online';
+                    statusIcon.innerHTML = '<i class="fas fa-check-circle"></i>';
+                    statusTitle.textContent = 'Server is Online!';
+                    statusText.textContent = 'All systems operational. You can proceed to sign up or login.';
+                    
+                    document.getElementById('apiUrl').textContent = API_URL;
+                    document.getElementById('serverStatus').textContent = 'Online ✅';
+                    document.getElementById('responseTime').textContent = `${responseTime}ms`;
+                    document.getElementById('lastChecked').textContent = new Date().toLocaleTimeString();
+                    details.style.display = 'block';
+                    
+                    retryBtn.style.display = 'inline-block';
+                } else {
+                    throw new Error('Server returned error');
+                }
+            } catch (error) {
+                // Server is offline or unreachable
+                statusIcon.className = 'status-icon offline';
+                statusIcon.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+                statusTitle.textContent = 'Server Unavailable';
+                statusText.textContent = 'The server is currently starting up or unreachable. This is normal after a deployment. Please wait 1-2 minutes and try again.';
+                
+                document.getElementById('apiUrl').textContent = API_URL;
+                document.getElementById('serverStatus').textContent = 'Offline or Starting ⏳';
+                document.getElementById('responseTime').textContent = 'N/A';
+                document.getElementById('lastChecked').textContent = new Date().toLocaleTimeString();
+                details.style.display = 'block';
+                
+                retryBtn.style.display = 'inline-block';
+
+                console.error('Status check error:', error);
+            }
+        }
+
+        // Auto-check on load
+        checkStatus();
+
+        // Auto-retry every 10 seconds if offline
+        setInterval(() => {
+            if (statusIcon.classList.contains('offline')) {
+                console.log('Auto-retrying status check...');
+                checkStatus();
+            }
+        }, 10000);
+    </script>
+</body>
+</html>
