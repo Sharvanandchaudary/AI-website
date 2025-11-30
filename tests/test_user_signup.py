@@ -23,7 +23,7 @@ def client():
 def admin_token(client):
     """Get admin authentication token"""
     response = client.post('/api/admin/login',
-        json={'email': 'admin@xgenai.com', 'password': 'admin123'},
+        json={'email': 'admin@xgenai.com', 'password': 'Admin@123'},
         content_type='application/json'
     )
     assert response.status_code == 200
@@ -192,8 +192,12 @@ class TestUserSignup:
         assert result is not None
         password_hash = result[0]
         assert password_hash != password  # Password should be hashed
-        assert len(password_hash) > 20  # Hash should be long
-        assert password_hash.startswith('$2b$')  # bcrypt hash format
+        assert len(password_hash) == 64  # SHA256 hash length
+        # Verify it's a valid hex string
+        try:
+            int(password_hash, 16)
+        except ValueError:
+            pytest.fail("Password hash is not a valid hexadecimal string")
 
 
 class TestUserDashboardDisplay:
