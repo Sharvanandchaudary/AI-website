@@ -82,6 +82,7 @@ else:
 
 def get_db_connection():
     """Get database connection (SQLite or PostgreSQL)"""
+    global USE_POSTGRES
     try:
         if USE_POSTGRES:
             print(f"🔌 Connecting to PostgreSQL...")
@@ -100,7 +101,6 @@ def get_db_connection():
         traceback.print_exc()
         if USE_POSTGRES:
             print(f"⚠️ PostgreSQL failed, falling back to SQLite...")
-            global USE_POSTGRES
             USE_POSTGRES = False
             return sqlite3.connect('aisolutions.db')
         else:
