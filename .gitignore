@@ -22,6 +22,10 @@ ENV/
 *.sqlite
 *.sqlite3
 
+# Exports
+exports/*.xlsx
+!exports/.gitkeep
+
 # IDE
 .vscode/
 .idea/
