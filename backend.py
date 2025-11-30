@@ -82,12 +82,20 @@ else:
 
 def get_db_connection():
     """Get database connection (SQLite or PostgreSQL)"""
-    if USE_POSTGRES:
-        conn = psycopg2.connect(DATABASE_URL)
-        conn.autocommit = False
-        return conn
-    else:
-        return sqlite3.connect(DB_NAME)
+    try:
+        if USE_POSTGRES:
+            conn = psycopg2.connect(DATABASE_URL)
+            conn.autocommit = False
+            return conn
+        else:
+            return sqlite3.connect(DB_NAME)
+    except Exception as e:
+        print(f"❌ Database connection error: {e}")
+        if USE_POSTGRES:
+            print(f"⚠️ Falling back to SQLite...")
+            return sqlite3.connect('aisolutions.db')
+        else:
+            raise
 
 def init_db():
     """Initialize the database with required tables"""
