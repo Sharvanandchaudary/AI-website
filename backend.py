@@ -1247,30 +1247,35 @@ def get_stats():
         # Strip 'Bearer ' prefix if present
         if token.startswith('Bearer '):
             token = token[7:]
+        
+        print(f"📊 Stats request - Token: {token[:20] if token else 'None'}...")
+        
         if not verify_admin_token(token):
+            print(f"❌ Unauthorized stats access")
             return jsonify({'error': 'Unauthorized'}), 401
+        
+        print(f"✅ Admin authenticated, fetching stats...")
         
         conn = get_db_connection()
         cursor = conn.cursor()
         
         try:
-            # Total users
             cursor.execute('SELECT COUNT(*) FROM users')
             total_users = cursor.fetchone()[0]
+            print(f"📈 Total users: {total_users}")
         except Exception as e:
-            print(f"Error fetching users count: {e}")
+            print(f"⚠️ Error fetching users count: {e}")
             total_users = 0
         
         try:
-            # Total emails
             cursor.execute('SELECT COUNT(*) FROM emails')
             total_emails = cursor.fetchone()[0]
+            print(f"📧 Total emails: {total_emails}")
         except Exception as e:
-            print(f"Error fetching emails count: {e}")
+            print(f"⚠️ Error fetching emails count: {e}")
             total_emails = 0
         
         try:
-            # Users today
             if USE_POSTGRES:
                 cursor.execute('''
                     SELECT COUNT(*) FROM users 
@@ -1282,37 +1287,45 @@ def get_stats():
                     WHERE DATE(created_at) = DATE('now')
                 ''')
             today_users = cursor.fetchone()[0]
+            print(f"👤 Today's users: {today_users}")
         except Exception as e:
-            print(f"Error fetching today's users: {e}")
+            print(f"⚠️ Error fetching today's users: {e}")
             today_users = 0
         
         try:
-            # Total applications
             cursor.execute('SELECT COUNT(*) FROM applications')
             total_applications = cursor.fetchone()[0]
+            print(f"📝 Total applications: {total_applications}")
         except Exception as e:
-            print(f"Error fetching applications count: {e}")
+            print(f"⚠️ Error fetching applications count: {e}")
             total_applications = 0
         
         try:
-            # Active interns
-            cursor.execute("SELECT COUNT(*) FROM selected_interns WHERE status = 'active'" if not USE_POSTGRES else "SELECT COUNT(*) FROM selected_interns WHERE status = 'active'")
+            cursor.execute("SELECT COUNT(*) FROM selected_interns WHERE status = 'active'")
             active_interns = cursor.fetchone()[0]
+            print(f"👨‍💼 Active interns: {active_interns}")
         except Exception as e:
-            print(f"Error fetching active interns: {e}")
+            print(f"⚠️ Error fetching active interns: {e}")
             active_interns = 0
         
         conn.close()
         
-        return jsonify({
+        stats = {
             'total_users': total_users,
             'total_emails': total_emails,
             'today_users': today_users,
             'total_applications': total_applications,
             'active_interns': active_interns
-        }), 200
+        }
+        
+        print(f"✅ Stats response: {stats}")
+        return jsonify(stats), 200
         
     except Exception as e:
+        print(f"❌ Stats error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
         print(f"❌ Error fetching stats: {e}")
         import traceback
         traceback.print_exc()
