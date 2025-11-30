@@ -1716,8 +1716,14 @@ def get_all_applications():
         # Strip 'Bearer ' prefix if present
         if token.startswith('Bearer '):
             token = token[7:]
+        
+        print(f"🔐 Applications request - Token: {token[:20] if token else 'None'}...")
+        
         if not verify_admin_token(token):
+            print(f"❌ Unauthorized access attempt")
             return jsonify({'error': 'Unauthorized'}), 401
+        
+        print(f"✅ Admin authenticated, fetching applications...")
         
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -1741,7 +1747,7 @@ def get_all_applications():
                 'semester': row[6],
                 'year': row[7],
                 'status': row[8],
-                'appliedAt': row[9],
+                'appliedAt': str(row[9]) if row[9] else None,
                 'linkedin': row[10],
                 'github': row[11],
                 'address': row[12],
@@ -1751,11 +1757,15 @@ def get_all_applications():
             })
         
         conn.close()
+        
+        print(f"✅ Found {len(applications)} applications")
         return jsonify({'applications': applications}), 200
         
     except Exception as e:
         print(f"❌ Error fetching applications: {e}")
-        return jsonify({'error': 'Internal server error'}), 500
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/admin/applications/<int:app_id>/status', methods=['PUT'])
 def update_application_status(app_id):
