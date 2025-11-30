@@ -219,6 +219,17 @@ def init_db():
                 applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
+        
+        # Add resume_data column if it doesn't exist (migration for existing tables)
+        try:
+            cursor.execute('''
+                ALTER TABLE applications 
+                ADD COLUMN IF NOT EXISTS resume_data BYTEA
+            ''')
+            print("✅ Added resume_data column to applications table")
+        except Exception as e:
+            print(f"ℹ️ resume_data column may already exist: {e}")
+            
     else:
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS applications (
@@ -241,7 +252,16 @@ def init_db():
                 applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
-    
+        
+        # Add resume_data column if it doesn't exist (migration for SQLite)
+        try:
+            cursor.execute("PRAGMA table_info(applications)")
+            columns = [col[1] for col in cursor.fetchall()]
+            if 'resume_data' not in columns:
+                cursor.execute("ALTER TABLE applications ADD COLUMN resume_data BLOB")
+                print("✅ Added resume_data column to applications table")
+        except Exception as e:
+            print(f"ℹ️ resume_data column may already exist: {e}")    
     # Selected Interns table - interns who get dashboard access
     if USE_POSTGRES:
         cursor.execute('''
