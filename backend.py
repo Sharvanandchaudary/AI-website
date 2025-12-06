@@ -6,7 +6,6 @@ from flask import Flask, request, jsonify, send_from_directory, redirect, send_f
 from io import BytesIO
 from flask_cors import CORS
 from flask_mail import Mail, Message
-import sqlite3
 import hashlib
 import secrets
 from datetime import datetime
@@ -92,6 +91,9 @@ if DATABASE_URL.startswith('postgresql://'):
 
 # Import PostgreSQL driver
 import psycopg2
+
+# Set USE_POSTGRES flag (always True now - PostgreSQL only)
+USE_POSTGRES = True
 
 print(f"✅ Using PostgreSQL ONLY (GCP-ready)")
 print(f"🔌 Database: {DATABASE_URL[:30]}...")
@@ -253,39 +255,15 @@ def init_db():
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
-    else:
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS intern_progress (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                intern_id INTEGER NOT NULL,
-                week_number INTEGER NOT NULL,
-                tasks_completed INTEGER DEFAULT 0,
-                tasks_total INTEGER DEFAULT 0,
-                performance_notes TEXT,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (intern_id) REFERENCES selected_interns (id)
-            )
-        ''')
     
     # Intern Sessions table for authentication
-    if USE_POSTGRES:
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS intern_sessions (
-                id SERIAL PRIMARY KEY,
-                intern_id INTEGER NOT NULL REFERENCES selected_interns(id),
-                token VARCHAR(255) UNIQUE NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-    else:
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS intern_sessions (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                intern_id INTEGER NOT NULL,
-                token TEXT UNIQUE NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (intern_id) REFERENCES selected_interns (id)
-            )
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS intern_sessions (
+            id SERIAL PRIMARY KEY,
+            intern_id INTEGER NOT NULL REFERENCES selected_interns(id),
+            token VARCHAR(255) UNIQUE NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
         ''')
     
     conn.commit()
@@ -355,26 +333,15 @@ XGENAI Team
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        if USE_POSTGRES:
-            cursor.execute('''
-                INSERT INTO emails (to_email, subject, body, user_id)
-                VALUES (%s, %s, %s, %s)
-            ''', (
-                user_data['email'],
-                subject,
-                email_body,
-                user_data.get('user_id')
-            ))
-        else:
-            cursor.execute('''
-                INSERT INTO emails (to_email, subject, body, user_id)
-                VALUES (?, ?, ?, ?)
-            ''', (
-                user_data['email'],
-                subject,
-                email_body,
-                user_data.get('user_id')
-            ))
+        cursor.execute('''
+            INSERT INTO emails (to_email, subject, body, user_id)
+            VALUES (%s, %s, %s, %s)
+        ''', (
+            user_data['email'],
+            subject,
+            email_body,
+            user_data.get('user_id')
+        ))
         
         conn.commit()
         conn.close()
@@ -591,10 +558,7 @@ def download_resume(application_id):
         cursor = conn.cursor()
         
         # Fetch resume data from database
-        if USE_POSTGRES:
-            cursor.execute('SELECT resume_name, resume_data FROM applications WHERE id = %s', (application_id,))
-        else:
-            cursor.execute('SELECT resume_name, resume_data FROM applications WHERE id = ?', (application_id,))
+        cursor.execute('SELECT resume_name, resume_data FROM applications WHERE id = %s', (application_id,))
         
         row = cursor.fetchone()
         conn.close()
@@ -731,10 +695,7 @@ def signup_simple():
         cursor = conn.cursor()
         
         # Check if user exists
-        if USE_POSTGRES:
-            cursor.execute('SELECT id FROM users WHERE email = %s', (data['email'],))
-        else:
-            cursor.execute('SELECT id FROM users WHERE email = ?', (data['email'],))
+        cursor.execute('SELECT id FROM users WHERE email = %s', (data['email'],))
         existing = cursor.fetchone()
         
         if existing:
@@ -747,33 +708,19 @@ def signup_simple():
         print(f"🔐 Password hashed")
         
         # Insert user
-        if USE_POSTGRES:
-            cursor.execute('''
-                INSERT INTO users (name, email, phone, address, password_hash, created_at)
-                VALUES (%s, %s, %s, %s, %s, %s)
-                RETURNING id
-            ''', (
-                data['name'],
-                data['email'],
-                data['phone'],
-                data['address'],
-                password_hash,
-                datetime.now()
-            ))
-            user_id = cursor.fetchone()[0]
-        else:
-            cursor.execute('''
-                INSERT INTO users (name, email, phone, address, password_hash, created_at)
-                VALUES (?, ?, ?, ?, ?, ?)
-            ''', (
-                data['name'],
-                data['email'],
-                data['phone'],
-                data['address'],
-                password_hash,
-                datetime.now()
-            ))
-            user_id = cursor.lastrowid
+        cursor.execute('''
+            INSERT INTO users (name, email, phone, address, password_hash, created_at)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            RETURNING id
+        ''', (
+            data['name'],
+            data['email'],
+            data['phone'],
+            data['address'],
+            password_hash,
+            datetime.now()
+        ))
+        user_id = cursor.fetchone()[0]
         
         conn.commit()
         conn.close()
@@ -816,10 +763,7 @@ def signup():
             cursor = conn.cursor()
             
             # Check if user already exists
-            if USE_POSTGRES:
-                cursor.execute('SELECT id FROM users WHERE email = %s', (data['email'],))
-            else:
-                cursor.execute('SELECT id FROM users WHERE email = ?', (data['email'],))
+            cursor.execute('SELECT id FROM users WHERE email = %s', (data['email'],))
             existing_user = cursor.fetchone()
             
             if existing_user:
@@ -830,19 +774,12 @@ def signup():
             password_hash = hash_password(data['password'])
             
             # Insert new user
-            if USE_POSTGRES:
-                cursor.execute('''
-                    INSERT INTO users (name, email, phone, address, password_hash, created_at)
-                    VALUES (%s, %s, %s, %s, %s, %s)
-                    RETURNING id
-                ''', (data['name'], data['email'], data['phone'], data['address'], password_hash, datetime.now()))
-                user_id = cursor.fetchone()[0]
-            else:
-                cursor.execute('''
-                    INSERT INTO users (name, email, phone, address, password_hash)
-                    VALUES (?, ?, ?, ?, ?)
-                ''', (data['name'], data['email'], data['phone'], data['address'], password_hash))
-                user_id = cursor.lastrowid
+            cursor.execute('''
+                INSERT INTO users (name, email, phone, address, password_hash, created_at)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                RETURNING id
+            ''', (data['name'], data['email'], data['phone'], data['address'], password_hash, datetime.now()))
+            user_id = cursor.fetchone()[0]
             
             conn.commit()
             
@@ -969,18 +906,11 @@ def login():
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        if USE_POSTGRES:
-            cursor.execute('''
-                SELECT id, name, email, phone, address, created_at
-                FROM users
-                WHERE email = %s AND password_hash = %s
-            ''', (data['email'], password_hash))
-        else:
-            cursor.execute('''
-                SELECT id, name, email, phone, address, created_at
-                FROM users
-                WHERE email = ? AND password_hash = ?
-            ''', (data['email'], password_hash))
+        cursor.execute('''
+            SELECT id, name, email, phone, address, created_at
+            FROM users
+            WHERE email = %s AND password_hash = %s
+        ''', (data['email'], password_hash))
         
         user = cursor.fetchone()
         
@@ -989,22 +919,14 @@ def login():
             return jsonify({'error': 'Invalid email or password'}), 401
         
         # Update last login
-        if USE_POSTGRES:
-            cursor.execute('UPDATE users SET last_login = %s WHERE id = %s', 
-                          (datetime.now(), user[0]))
-        else:
-            cursor.execute('UPDATE users SET last_login = ? WHERE id = ?', 
-                          (datetime.now(), user[0]))
+        cursor.execute('UPDATE users SET last_login = %s WHERE id = %s', 
+                      (datetime.now(), user[0]))
         
         # Create session token
         token = secrets.token_hex(32)
         
-        if USE_POSTGRES:
-            cursor.execute('INSERT INTO sessions (user_id, token) VALUES (%s, %s)',
-                          (user[0], token))
-        else:
-            cursor.execute('INSERT INTO sessions (user_id, token) VALUES (?, ?)',
-                          (user[0], token))
+        cursor.execute('INSERT INTO sessions (user_id, token) VALUES (%s, %s)',
+                      (user[0], token))
         
         conn.commit()
         conn.close()
@@ -1142,16 +1064,10 @@ def get_stats():
             total_emails = 0
         
         try:
-            if USE_POSTGRES:
-                cursor.execute('''
-                    SELECT COUNT(*) FROM users 
-                    WHERE DATE(created_at) = CURRENT_DATE
-                ''')
-            else:
-                cursor.execute('''
-                    SELECT COUNT(*) FROM users 
-                    WHERE DATE(created_at) = DATE('now')
-                ''')
+            cursor.execute('''
+                SELECT COUNT(*) FROM users 
+                WHERE DATE(created_at) = CURRENT_DATE
+            ''')
             today_users = cursor.fetchone()[0]
             print(f"👤 Today's users: {today_users}")
         except Exception as e:
@@ -1206,7 +1122,7 @@ def get_stats():
 def clear_data():
     """Clear all data (admin only)"""
     try:
-        conn = sqlite3.connect(DB_NAME)
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         cursor.execute('DELETE FROM sessions')
@@ -1228,9 +1144,9 @@ def clear_data():
 def verify_token(token):
     """Verify user token and return user_id"""
     try:
-        conn = sqlite3.connect(DB_NAME)
+        conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute('SELECT user_id FROM sessions WHERE token = ?', (token,))
+        cursor.execute('SELECT user_id FROM sessions WHERE token = %s', (token,))
         result = cursor.fetchone()
         conn.close()
         return result[0] if result else None
@@ -1253,13 +1169,13 @@ def get_user_dashboard():
         if not user_id:
             return jsonify({'error': 'Invalid token'}), 401
         
-        conn = sqlite3.connect(DB_NAME)
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         # Get user data
         cursor.execute('''
             SELECT id, name, email, phone, address, created_at, last_login
-            FROM users WHERE id = ?
+            FROM users WHERE id = %s
         ''', (user_id,))
         user_row = cursor.fetchone()
         
@@ -1327,15 +1243,16 @@ def add_project():
         if not data.get('name') or not data.get('description') or not data.get('status'):
             return jsonify({'error': 'Name, description, and status are required'}), 400
         
-        conn = sqlite3.connect(DB_NAME)
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         cursor.execute('''
             INSERT INTO projects (user_id, name, description, status)
-            VALUES (?, ?, ?, ?)
+            VALUES (%s, %s, %s, %s)
+            RETURNING id
         ''', (user_id, data['name'], data['description'], data['status']))
         
-        project_id = cursor.lastrowid
+        project_id = cursor.fetchone()[0]
         conn.commit()
         conn.close()
         
@@ -1366,7 +1283,7 @@ def get_all_admin_data():
             user_id = verify_token(token)
             # Token validation is optional for now
         
-        conn = sqlite3.connect(DB_NAME)
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         # Get all users
@@ -1480,37 +1397,21 @@ def submit_application():
         cursor = conn.cursor()
         
         # Insert application with resume data
-        if USE_POSTGRES:
-            print("📊 Using PostgreSQL database")
-            cursor.execute('''
-                INSERT INTO applications 
-                (position, full_name, email, phone, address, college, degree, 
-                 semester, year, about, resume_name, resume_data, linkedin, github, applied_at, status)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                RETURNING id
-            ''', (
-                data['position'], data['fullName'], data['email'], data['phone'],
-                data['address'], data['college'], data['degree'], data['semester'],
-                data['year'], data['about'], resume_name, resume_data,
-                data.get('linkedin', ''), data.get('github', ''),
-                datetime.now(), 'pending'
-            ))
-            application_id = cursor.fetchone()[0]
-        else:
-            print("📊 Using SQLite database")
-            cursor.execute('''
-                INSERT INTO applications 
-                (position, full_name, email, phone, address, college, degree, 
-                 semester, year, about, resume_name, resume_data, linkedin, github, applied_at, status)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (
-                data['position'], data['fullName'], data['email'], data['phone'],
-                data['address'], data['college'], data['degree'], data['semester'],
-                data['year'], data['about'], resume_name, resume_data,
-                data.get('linkedin', ''), data.get('github', ''),
-                datetime.now(), 'pending'
-            ))
-            application_id = cursor.lastrowid
+        print("📊 Using PostgreSQL database")
+        cursor.execute('''
+            INSERT INTO applications 
+            (position, full_name, email, phone, address, college, degree, 
+             semester, year, about, resume_name, resume_data, linkedin, github, applied_at, status)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            RETURNING id
+        ''', (
+            data['position'], data['fullName'], data['email'], data['phone'],
+            data['address'], data['college'], data['degree'], data['semester'],
+            data['year'], data['about'], resume_name, resume_data,
+            data.get('linkedin', ''), data.get('github', ''),
+            datetime.now(), 'pending'
+        ))
+        application_id = cursor.fetchone()[0]
         
         conn.commit()
         conn.close()
@@ -1540,16 +1441,10 @@ ZGENAI Recruitment Team
         # Store email in database first
         try:
             cursor = conn.cursor() if not conn else get_db_connection().cursor()
-            if USE_POSTGRES:
-                cursor.execute('''
-                    INSERT INTO emails (to_email, subject, body, sent_at)
-                    VALUES (%s, %s, %s, %s)
-                ''', (data['email'], f"Application Received - {data['position']}", email_body, datetime.now()))
-            else:
-                cursor.execute('''
-                    INSERT INTO emails (to_email, subject, body, sent_at)
-                    VALUES (?, ?, ?, ?)
-                ''', (data['email'], f"Application Received - {data['position']}", email_body, datetime.now()))
+            cursor.execute('''
+                INSERT INTO emails (to_email, subject, body, sent_at)
+                VALUES (%s, %s, %s, %s)
+            ''', (data['email'], f"Application Received - {data['position']}", email_body, datetime.now()))
             if not conn:
                 cursor.connection.commit()
                 cursor.connection.close()
