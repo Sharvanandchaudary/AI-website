@@ -17,7 +17,7 @@ import sys
 
 # Configuration
 BASE_URL = "https://xgenai.onrender.com"  # Change to local for testing: http://localhost:5000
-ADMIN_EMAIL = "admin@xgenai.com"
+ADMIN_EMAIL = "admin@zgenai.com"
 ADMIN_PASSWORD = "Admin@123"
 
 # Test results tracking

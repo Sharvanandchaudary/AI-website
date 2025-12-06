@@ -116,272 +116,138 @@ def init_db():
     # Users table
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS users (
-                id SERIAL PRIMARY KEY,
-                name VARCHAR(255) NOT NULL,
-                email VARCHAR(255) UNIQUE NOT NULL,
-                phone VARCHAR(50) NOT NULL,
-                address TEXT NOT NULL,
-                password_hash VARCHAR(255) NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                last_login TIMESTAMP
-            )
-        ''')
-    else:
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                email TEXT UNIQUE NOT NULL,
-                phone TEXT NOT NULL,
-                address TEXT NOT NULL,
-                password_hash TEXT NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                last_login TIMESTAMP
-            )
-        ''')
+            id SERIAL PRIMARY KEY,
+            name VARCHAR(255) NOT NULL,
+            email VARCHAR(255) UNIQUE NOT NULL,
+            phone VARCHAR(50) NOT NULL,
+            address TEXT NOT NULL,
+            password_hash VARCHAR(255) NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            last_login TIMESTAMP
+        )
+    ''')
     
     # Emails table
-    if USE_POSTGRES:
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS emails (
-                id SERIAL PRIMARY KEY,
-                to_email VARCHAR(255) NOT NULL,
-                subject VARCHAR(500) NOT NULL,
-                body TEXT NOT NULL,
-                sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                user_id INTEGER REFERENCES users(id)
-            )
-        ''')
-    else:
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS emails (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                to_email TEXT NOT NULL,
-                subject TEXT NOT NULL,
-                body TEXT NOT NULL,
-                sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                user_id INTEGER,
-                FOREIGN KEY (user_id) REFERENCES users (id)
-            )
-        ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS emails (
+            id SERIAL PRIMARY KEY,
+            to_email VARCHAR(255) NOT NULL,
+            subject VARCHAR(500) NOT NULL,
+            body TEXT NOT NULL,
+            sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            user_id INTEGER REFERENCES users(id)
+        )
+    ''')
     
     # Sessions table
-    if USE_POSTGRES:
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS sessions (
-                id SERIAL PRIMARY KEY,
-                user_id INTEGER NOT NULL REFERENCES users(id),
-                token VARCHAR(255) UNIQUE NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-    else:
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS sessions (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL,
-                token TEXT UNIQUE NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users (id)
-            )
-        ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS sessions (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(id),
+            token VARCHAR(255) UNIQUE NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
     
     # Projects table
-    if USE_POSTGRES:
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS projects (
-                id SERIAL PRIMARY KEY,
-                user_id INTEGER NOT NULL REFERENCES users(id),
-                name VARCHAR(255) NOT NULL,
-                description TEXT NOT NULL,
-                status VARCHAR(50) NOT NULL DEFAULT 'planning',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-    else:
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS projects (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL,
-                name TEXT NOT NULL,
-                description TEXT NOT NULL,
-                status TEXT NOT NULL DEFAULT 'planning',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users (id)
-            )
-        ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS projects (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(id),
+            name VARCHAR(255) NOT NULL,
+            description TEXT NOT NULL,
+            status VARCHAR(50) NOT NULL DEFAULT 'planning',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
     
     # Applications table for job applications
-    if USE_POSTGRES:
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS applications (
+            id SERIAL PRIMARY KEY,
+            position VARCHAR(255) NOT NULL,
+            full_name VARCHAR(255) NOT NULL,
+            email VARCHAR(255) NOT NULL,
+            phone VARCHAR(50) NOT NULL,
+            address TEXT NOT NULL,
+            college VARCHAR(255) NOT NULL,
+            degree VARCHAR(255) NOT NULL,
+            semester VARCHAR(50) NOT NULL,
+            year VARCHAR(50) NOT NULL,
+            about TEXT NOT NULL,
+            resume_name VARCHAR(255) NOT NULL,
+            resume_data BYTEA,
+            linkedin VARCHAR(500),
+            github VARCHAR(500),
+            status VARCHAR(50) DEFAULT 'pending',
+            applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    # Add resume_data column if it doesn't exist (migration for existing tables)
+    try:
         cursor.execute('''
-            CREATE TABLE IF NOT EXISTS applications (
-                id SERIAL PRIMARY KEY,
-                position VARCHAR(255) NOT NULL,
-                full_name VARCHAR(255) NOT NULL,
-                email VARCHAR(255) NOT NULL,
-                phone VARCHAR(50) NOT NULL,
-                address TEXT NOT NULL,
-                college VARCHAR(255) NOT NULL,
-                degree VARCHAR(255) NOT NULL,
-                semester VARCHAR(50) NOT NULL,
-                year VARCHAR(50) NOT NULL,
-                about TEXT NOT NULL,
-                resume_name VARCHAR(255) NOT NULL,
-                resume_data BYTEA,
-                linkedin VARCHAR(500),
-                github VARCHAR(500),
-                status VARCHAR(50) DEFAULT 'pending',
-                applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
+            ALTER TABLE applications 
+            ADD COLUMN IF NOT EXISTS resume_data BYTEA
         ''')
+        print("✅ Added resume_data column to applications table")
+    except Exception as e:
+        print(f"ℹ️ resume_data column may already exist: {e}")
         
-        # Add resume_data column if it doesn't exist (migration for existing tables)
-        try:
-            cursor.execute('''
-                ALTER TABLE applications 
-                ADD COLUMN IF NOT EXISTS resume_data BYTEA
-            ''')
-            print("✅ Added resume_data column to applications table")
-        except Exception as e:
-            print(f"ℹ️ resume_data column may already exist: {e}")
-            
-    else:
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS applications (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                position TEXT NOT NULL,
-                full_name TEXT NOT NULL,
-                email TEXT NOT NULL,
-                phone TEXT NOT NULL,
-                address TEXT NOT NULL,
-                college TEXT NOT NULL,
-                degree TEXT NOT NULL,
-                semester TEXT NOT NULL,
-                year TEXT NOT NULL,
-                about TEXT NOT NULL,
-                resume_name TEXT NOT NULL,
-                resume_data BLOB,
-                linkedin TEXT,
-                github TEXT,
-                status TEXT DEFAULT 'pending',
-                applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-        
-        # Add resume_data column if it doesn't exist (migration for SQLite)
-        try:
-            cursor.execute("PRAGMA table_info(applications)")
-            columns = [col[1] for col in cursor.fetchall()]
-            if 'resume_data' not in columns:
-                cursor.execute("ALTER TABLE applications ADD COLUMN resume_data BLOB")
-                print("✅ Added resume_data column to applications table")
-        except Exception as e:
-            print(f"ℹ️ resume_data column may already exist: {e}")    
     # Selected Interns table - interns who get dashboard access
-    if USE_POSTGRES:
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS selected_interns (
-                id SERIAL PRIMARY KEY,
-                application_id INTEGER REFERENCES applications(id),
-                full_name VARCHAR(255) NOT NULL,
-                email VARCHAR(255) UNIQUE NOT NULL,
-                password_hash VARCHAR(255) NOT NULL,
-                position VARCHAR(255) NOT NULL,
-                college VARCHAR(255) NOT NULL,
-                start_date DATE DEFAULT CURRENT_DATE,
-                status VARCHAR(50) DEFAULT 'active',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-    else:
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS selected_interns (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                application_id INTEGER,
-                full_name TEXT NOT NULL,
-                email TEXT UNIQUE NOT NULL,
-                password_hash TEXT NOT NULL,
-                position TEXT NOT NULL,
-                college TEXT NOT NULL,
-                start_date DATE DEFAULT CURRENT_DATE,
-                status TEXT DEFAULT 'active',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (application_id) REFERENCES applications (id)
-            )
-        ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS selected_interns (
+            id SERIAL PRIMARY KEY,
+            application_id INTEGER REFERENCES applications(id),
+            full_name VARCHAR(255) NOT NULL,
+            email VARCHAR(255) UNIQUE NOT NULL,
+            password_hash VARCHAR(255) NOT NULL,
+            position VARCHAR(255) NOT NULL,
+            college VARCHAR(255) NOT NULL,
+            start_date DATE DEFAULT CURRENT_DATE,
+            status VARCHAR(50) DEFAULT 'active',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
     
     # Weekly Tasks table - preloaded by admin
-    if USE_POSTGRES:
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS weekly_tasks (
-                id SERIAL PRIMARY KEY,
-                week_number INTEGER NOT NULL,
-                task_title VARCHAR(255) NOT NULL,
-                task_description TEXT NOT NULL,
-                mini_project_guidelines TEXT,
-                ds_algo_topic VARCHAR(255),
-                ai_news TEXT,
-                due_date DATE,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-    else:
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS weekly_tasks (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                week_number INTEGER NOT NULL,
-                task_title TEXT NOT NULL,
-                task_description TEXT NOT NULL,
-                mini_project_guidelines TEXT,
-                ds_algo_topic TEXT,
-                ai_news TEXT,
-                due_date DATE,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS weekly_tasks (
+            id SERIAL PRIMARY KEY,
+            week_number INTEGER NOT NULL,
+            task_title VARCHAR(255) NOT NULL,
+            task_description TEXT NOT NULL,
+            mini_project_guidelines TEXT,
+            ds_algo_topic VARCHAR(255),
+            ai_news TEXT,
+            due_date DATE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
     
     # Task Submissions table - intern uploads
-    if USE_POSTGRES:
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS task_submissions (
-                id SERIAL PRIMARY KEY,
-                intern_id INTEGER NOT NULL REFERENCES selected_interns(id),
-                task_id INTEGER NOT NULL REFERENCES weekly_tasks(id),
-                submission_file TEXT,
-                submission_type VARCHAR(50),
-                what_learned TEXT,
-                submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                status VARCHAR(50) DEFAULT 'submitted'
-            )
-        ''')
-    else:
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS task_submissions (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                intern_id INTEGER NOT NULL,
-                task_id INTEGER NOT NULL,
-                submission_file TEXT,
-                submission_type TEXT,
-                what_learned TEXT,
-                submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                status TEXT DEFAULT 'submitted',
-                FOREIGN KEY (intern_id) REFERENCES selected_interns (id),
-                FOREIGN KEY (task_id) REFERENCES weekly_tasks (id)
-            )
-        ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS task_submissions (
+            id SERIAL PRIMARY KEY,
+            intern_id INTEGER NOT NULL REFERENCES selected_interns(id),
+            task_id INTEGER NOT NULL REFERENCES weekly_tasks(id),
+            submission_file TEXT,
+            submission_type VARCHAR(50),
+            what_learned TEXT,
+            submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            status VARCHAR(50) DEFAULT 'submitted'
+        )
+    ''')
     
     # Intern Progress Tracking
-    if USE_POSTGRES:
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS intern_progress (
-                id SERIAL PRIMARY KEY,
-                intern_id INTEGER NOT NULL REFERENCES selected_interns(id),
-                week_number INTEGER NOT NULL,
-                tasks_completed INTEGER DEFAULT 0,
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS intern_progress (
+            id SERIAL PRIMARY KEY,
+            intern_id INTEGER NOT NULL REFERENCES selected_interns(id),
+            week_number INTEGER NOT NULL,
+            tasks_completed INTEGER DEFAULT 0,
                 tasks_total INTEGER DEFAULT 0,
                 performance_notes TEXT,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -441,7 +307,7 @@ def send_email_mailgun(to_email, subject, body):
             f"https://api.mailgun.net/v3/{MAILGUN_DOMAIN}/messages",
             auth=("api", MAILGUN_API_KEY),
             data={
-                "from": f"XGENAI <{MAILGUN_FROM_EMAIL}>",
+                "from": f"ZGENAI <{MAILGUN_FROM_EMAIL}>",
                 "to": [to_email],
                 "subject": subject,
                 "text": body,
@@ -465,7 +331,7 @@ def send_confirmation_email(user_data):
         email_body = f"""
 Hi {user_data['name']},
 
-Welcome to XGENAI!
+Welcome to ZGENAI!
 
 Your account has been created successfully. Here are your details:
 
@@ -483,7 +349,7 @@ Best regards,
 XGENAI Team
         """
         
-        subject = 'Welcome to XGENAI - Account Created Successfully!'
+        subject = 'Welcome to ZGENAI - Account Created Successfully!'
         
         # Store email in database
         conn = get_db_connection()
@@ -526,7 +392,7 @@ XGENAI Team
 
 # Admin credentials (in production, store these securely in database with hashing)
 ADMIN_USERS = {
-    os.getenv('ADMIN_EMAIL', 'admin@xgenai.com'): {
+    os.getenv('ADMIN_EMAIL', 'admin@zgenai.com'): {
         'password_hash': hashlib.sha256(os.getenv('ADMIN_PASSWORD', 'Admin@123').encode()).hexdigest(),
         'role': 'admin'
     }
@@ -1655,7 +1521,7 @@ def submit_application():
         email_body = f"""
 Hi {data['fullName']},
 
-Thank you for applying to XGENAI!
+Thank you for applying to ZGENAI!
 
 We have received your application for the {data['position']} position.
 
@@ -1668,7 +1534,7 @@ Application Details:
 Our team will review your application and get back to you within 5-7 business days.
 
 Best regards,
-XGENAI Recruitment Team
+ZGENAI Recruitment Team
         """
         
         # Store email in database first
@@ -2501,7 +2367,7 @@ def send_intern_welcome_email(email, name, password):
         email_body = f"""
 Hi {name},
 
-Congratulations! You have been selected for the internship program at XGENAI! 🎉
+Congratulations! You have been selected for the internship program at ZGENAI! 🎉
 
 Your intern dashboard credentials:
 Email: {email}
@@ -2519,7 +2385,7 @@ Best regards,
 XGENAI Team
         """
         
-        subject = '🎉 Welcome to XGENAI Internship Program!'
+        subject = '🎉 Welcome to ZGENAI Internship Program!'
         
         if IS_PRODUCTION:
             send_email_mailgun(email, subject, email_body)
