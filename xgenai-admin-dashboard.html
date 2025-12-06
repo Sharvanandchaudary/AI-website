@@ -922,7 +922,7 @@
 
         // Check authentication
         if (!authToken) {
-            window.location.href = '/xgenai-admin-portal';
+            window.location.href = '/zgenai-admin-portal';
         }
 
         // Load all data on page load
@@ -1447,16 +1447,14 @@
                 fetch(`${API_URL}/api/admin/logout`, {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${authToken}`
-                    }
-                }).catch(err => console.log('Logout API error:', err));
+                    'Authorization': `Bearer ${authToken}`
+                }
+            }).catch(err => console.log('Logout API error:', err));
                 
                 // Redirect to login
-                window.location.href = '/xgenai-admin-portal';
+                window.location.href = '/zgenai-admin-portal';
             }
-        }
-
-        // Export Functions
+        }        // Export Functions
         async function exportUsers() {
             try {
                 const response = await fetch(`${API_URL}/api/admin/export/users`, {

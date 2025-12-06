@@ -466,13 +466,13 @@ def apply_page():
     return add_security_headers(response)
 
 # PRODUCTION-GRADE ADMIN PORTAL - Separate URL Structure
-@app.route('/xgenai-admin-portal')
+@app.route('/zgenai-admin-portal')
 def xgenai_admin_portal_login():
     """Production admin portal - Login page"""
     response = send_from_directory('.', 'xgenai-admin-login.html')
     return add_security_headers(response)
 
-@app.route('/xgenai-admin-portal/dashboard')
+@app.route('/zgenai-admin-portal/dashboard')
 def xgenai_admin_portal_dashboard():
     """Production admin portal - Dashboard"""
     response = send_from_directory('.', 'xgenai-admin-dashboard.html')
@@ -494,27 +494,27 @@ def signup_page_direct():
 @app.route('/admin')
 def admin_page():
     """Redirect old admin URL to new portal"""
-    return redirect('/xgenai-admin-portal')
+    return redirect('/zgenai-admin-portal')
 
 @app.route('/xgenai-admin')
 def xgenai_admin_legacy():
     """Legacy admin URL - redirect to new portal"""
-    return redirect('/xgenai-admin-portal')
+    return redirect('/zgenai-admin-portal')
 
 @app.route('/xgen-admin-portal')
 def admin_auth_portal():
     """Legacy admin URL - redirect to new portal"""
-    return redirect('/xgenai-admin-portal')
+    return redirect('/zgenai-admin-portal')
 
 @app.route('/xgenai-admin-dashboard')
 def xgenai_admin_dashboard_legacy():
     """Legacy dashboard - redirect to new portal"""
-    return redirect('/xgenai-admin-portal/dashboard')
+    return redirect('/zgenai-admin-portal/dashboard')
 
 @app.route('/xgen-admin-dashboard')
 def admin_dashboard_portal():
     """Legacy dashboard - redirect to new portal"""
-    return redirect('/xgenai-admin-portal/dashboard')
+    return redirect('/zgenai-admin-portal/dashboard')
 
 # Intern Portal
 @app.route('/intern-login')

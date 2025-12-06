@@ -332,7 +332,7 @@
                     
                     // Redirect to dashboard
                     setTimeout(() => {
-                        window.location.href = '/xgenai-admin-portal/dashboard';
+                        window.location.href = '/zgenai-admin-portal/dashboard';
                     }, 1000);
                 } else {
                     showAlert(data.message || 'Invalid credentials. Please try again.', 'error');
@@ -362,7 +362,7 @@
                 .then(response => {
                     if (response.ok) {
                         // Already logged in, redirect to dashboard
-                        window.location.href = '/xgenai-admin-portal/dashboard';
+                        window.location.href = '/zgenai-admin-portal/dashboard';
                     }
                 });
             }
