@@ -2066,8 +2066,8 @@ def get_intern_dashboard():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/intern/submit-task', methods=['POST', 'OPTIONS'])
-def submit_task():
-    """Submit a task with file upload"""
+def submit_task_legacy():
+    """Submit a task with file upload (legacy intern system)"""
     if request.method == 'OPTIONS':
         return '', 204
     
