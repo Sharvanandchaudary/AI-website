@@ -638,12 +638,6 @@ def intern_login_page():
     response = send_from_directory('.', 'intern-login.html')
     return add_security_headers(response)
 
-@app.route('/intern-dashboard')
-def intern_dashboard_page():
-    """Serve intern dashboard page"""
-    response = send_from_directory('.', 'intern-dashboard.html')
-    return add_security_headers(response)
-
 @app.route('/test-application.html')
 def test_application_page():
     """Serve test application page"""
