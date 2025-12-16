@@ -457,16 +457,30 @@ def verify_admin_token(token):
 
 # Initialize database on module load (works with Gunicorn)
 # Use lazy initialization to avoid deployment timeouts
+_db_initialized = False
+
 def lazy_init_db():
     """Initialize database on first request if needed"""
+    global _db_initialized
+    
+    if _db_initialized:
+        return True
+    
     try:
         conn = get_db_connection()
+        cursor = conn.cursor()
+        # Check if tables exist by querying one
+        cursor.execute("SELECT COUNT(*) FROM users LIMIT 1")
+        cursor.fetchone()
         conn.close()
+        _db_initialized = True
+        print("✅ Database already initialized")
         return True
     except Exception as e:
-        print(f"⚠️ Database connection check failed, initializing: {e}")
+        print(f"⚠️ Database needs initialization: {e}")
         try:
             init_db()
+            _db_initialized = True
             print("✅ Database initialized successfully")
             return True
         except Exception as init_error:
@@ -855,6 +869,9 @@ def signup():
     """Register a new user"""
     if request.method == 'OPTIONS':
         return '', 204
+    
+    # Ensure database is initialized
+    lazy_init_db()
         
     try:
         data = request.json
@@ -2552,6 +2569,9 @@ def verify_user_token(token, role=None):
 @app.route('/api/user/login', methods=['POST'])
 def user_login():
     """User login for interns and recruiters"""
+    # Ensure database is initialized
+    lazy_init_db()
+    
     try:
         data = request.json
         email = data.get('email')
