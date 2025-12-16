@@ -1217,7 +1217,7 @@
                     
                     if (data.interns && data.interns.length > 0) {
                         let html = '<div class="table-responsive"><table>';
-                        html += '<tr><th>Name</th><th>Email</th><th>Position</th><th>College</th><th>Start Date</th><th>Status</th></tr>';
+                        html += '<tr><th>Name</th><th>Email</th><th>Position</th><th>College</th><th>Start Date</th><th>Status</th><th>Actions</th></tr>';
                         
                         data.interns.forEach(intern => {
                             html += `<tr>
@@ -1227,6 +1227,11 @@
                                 <td>${intern.college}</td>
                                 <td>${new Date(intern.start_date).toLocaleDateString()}</td>
                                 <td><span class="badge badge-success">${intern.status}</span></td>
+                                <td>
+                                    <button class="btn btn-danger" onclick="deleteIntern(${intern.id}, '${intern.full_name}')" style="padding: 6px 12px; font-size: 13px;">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </button>
+                                </td>
                             </tr>`;
                         });
                         
@@ -1354,6 +1359,59 @@
                 }
             } catch (error) {
                 console.error('Error selecting intern:', error);
+                alert('Connection error');
+            }
+        }
+
+        async function deleteIntern(internId, internName) {
+            if (!confirm(`Are you sure you want to delete intern account for ${internName}? This action cannot be undone.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/api/admin/interns/${internId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                if (response.ok) {
+                    alert('✅ Intern account deleted successfully!');
+                    loadInterns();
+                    loadStats();
+                } else {
+                    const data = await response.json();
+                    alert('Error: ' + (data.error || 'Failed to delete intern'));
+                }
+            } catch (error) {
+                console.error('Error deleting intern:', error);
+                alert('Connection error');
+            }
+        }
+
+        async function deleteRecruiter(recruiterId, recruiterName) {
+            if (!confirm(`Are you sure you want to delete recruiter account for ${recruiterName}? This action cannot be undone.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/api/admin/recruiters/${recruiterId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                if (response.ok) {
+                    alert('✅ Recruiter account deleted successfully!');
+                    loadStats();
+                } else {
+                    const data = await response.json();
+                    alert('Error: ' + (data.error || 'Failed to delete recruiter'));
+                }
+            } catch (error) {
+                console.error('Error deleting recruiter:', error);
                 alert('Connection error');
             }
         }
