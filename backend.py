@@ -456,25 +456,41 @@ def verify_admin_token(token):
     return token in admin_sessions
 
 # Initialize database on module load (works with Gunicorn)
-try:
-    print("🔧 Starting database initialization...")
-    init_db()
-    print("✅ Database initialized on startup")
-except Exception as e:
-    print(f"⚠️ Database initialization error: {e}")
-    import traceback
-    traceback.print_exc()
+# Use lazy initialization to avoid deployment timeouts
+def lazy_init_db():
+    """Initialize database on first request if needed"""
+    try:
+        conn = get_db_connection()
+        conn.close()
+        return True
+    except Exception as e:
+        print(f"⚠️ Database connection check failed, initializing: {e}")
+        try:
+            init_db()
+            print("✅ Database initialized successfully")
+            return True
+        except Exception as init_error:
+            print(f"❌ Database initialization error: {init_error}")
+            import traceback
+            traceback.print_exc()
+            return False
+
+# Only log that we're ready, don't init tables on startup (faster deployment)
+print("✅ Backend ready - database will initialize on first request")
 
 # Routes
 
 @app.route('/health')
 def health_check():
     """Health check endpoint for monitoring"""
+    # Trigger lazy database initialization on first health check
+    lazy_init_db()
+    
     return jsonify({
         'status': 'healthy',
         'message': 'Server is running!',
         'database_url_set': 'Yes' if os.getenv('DATABASE_URL') else 'No',
-        'version': '2.1.5'
+        'version': '2.1.6'
     }), 200
 
 @app.route('/api/test-db')
