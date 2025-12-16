@@ -1764,6 +1764,87 @@ def send_application_email():
         print(f"❌ Error sending application email: {e}")
         return jsonify({'error': 'Internal server error'}), 500
 
+@app.route('/api/admin/create-test-users', methods=['POST', 'GET'])
+def create_test_users():
+    """Create test accounts for demo purposes"""
+    try:
+        lazy_init_db()  # Ensure database is ready
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Test credentials
+        intern_email = 'intern@zgenai.com'
+        intern_password = 'Intern@123'
+        recruiter_email = 'recruiter@zgenai.com'
+        recruiter_password = 'Recruiter@123'
+        
+        # Hash passwords
+        intern_hash = hash_password(intern_password)
+        recruiter_hash = hash_password(recruiter_password)
+        
+        results = []
+        
+        # Create test intern
+        try:
+            if USE_POSTGRES:
+                cursor.execute('''
+                    INSERT INTO selected_interns (full_name, email, password_hash, position, college, status)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                    ON CONFLICT (email) DO NOTHING
+                    RETURNING id
+                ''', ('Test Intern', intern_email, intern_hash, 'Software Engineering Intern', 'Demo University', 'active'))
+            else:
+                cursor.execute('''
+                    INSERT OR IGNORE INTO selected_interns (full_name, email, password_hash, position, college, status)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                ''', ('Test Intern', intern_email, intern_hash, 'Software Engineering Intern', 'Demo University', 'active'))
+            
+            if cursor.rowcount > 0:
+                results.append(f"✓ Created intern: {intern_email} / {intern_password}")
+            else:
+                results.append(f"⚠ Intern already exists: {intern_email}")
+        except Exception as e:
+            results.append(f"✗ Intern creation failed: {str(e)}")
+        
+        # Create test recruiter
+        try:
+            if USE_POSTGRES:
+                cursor.execute('''
+                    INSERT INTO recruiters (full_name, email, password_hash, status)
+                    VALUES (%s, %s, %s, %s)
+                    ON CONFLICT (email) DO NOTHING
+                    RETURNING id
+                ''', ('Test Recruiter', recruiter_email, recruiter_hash, 'active'))
+            else:
+                cursor.execute('''
+                    INSERT OR IGNORE INTO recruiters (full_name, email, password_hash, status)
+                    VALUES (?, ?, ?, ?)
+                ''', ('Test Recruiter', recruiter_email, recruiter_hash, 'active'))
+            
+            if cursor.rowcount > 0:
+                results.append(f"✓ Created recruiter: {recruiter_email} / {recruiter_password}")
+            else:
+                results.append(f"⚠ Recruiter already exists: {recruiter_email}")
+        except Exception as e:
+            results.append(f"✗ Recruiter creation failed: {str(e)}")
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'message': 'Test user creation completed',
+            'results': results,
+            'credentials': {
+                'intern': {'email': intern_email, 'password': intern_password},
+                'recruiter': {'email': recruiter_email, 'password': recruiter_password}
+            }
+        }), 200
+        
+    except Exception as e:
+        print(f"Error creating test users: {e}")
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/admin/init-db', methods=['POST'])
 def init_database():
     """Initialize/reset database (admin only)"""
