@@ -266,6 +266,87 @@ def init_db():
         )
         ''')
     
+    # Intern Daily Tasks table - created by intern users
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS intern_daily_tasks (
+            id SERIAL PRIMARY KEY,
+            intern_id INTEGER NOT NULL REFERENCES selected_interns(id),
+            title VARCHAR(255) NOT NULL,
+            description TEXT,
+            priority VARCHAR(50) DEFAULT 'medium',
+            status VARCHAR(50) DEFAULT 'pending',
+            due_date DATE,
+            completed_at TIMESTAMP,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    # Task Submissions Extended - when intern submits a task
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS daily_task_submissions (
+            id SERIAL PRIMARY KEY,
+            task_id INTEGER NOT NULL REFERENCES intern_daily_tasks(id),
+            intern_id INTEGER NOT NULL REFERENCES selected_interns(id),
+            submission_notes TEXT,
+            hours_spent DECIMAL(5,2),
+            submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    # Recruiters table - separate users for recruiter dashboard
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS recruiters (
+            id SERIAL PRIMARY KEY,
+            full_name VARCHAR(255) NOT NULL,
+            email VARCHAR(255) UNIQUE NOT NULL,
+            password_hash VARCHAR(255) NOT NULL,
+            status VARCHAR(50) DEFAULT 'active',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    # Recruiter Sessions table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS recruiter_sessions (
+            id SERIAL PRIMARY KEY,
+            recruiter_id INTEGER NOT NULL REFERENCES recruiters(id),
+            token VARCHAR(255) UNIQUE NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    # Recruiter Applications table - jobs they applied to
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS recruiter_applications (
+            id SERIAL PRIMARY KEY,
+            recruiter_id INTEGER NOT NULL REFERENCES recruiters(id),
+            company_name VARCHAR(255) NOT NULL,
+            position VARCHAR(255) NOT NULL,
+            location VARCHAR(255),
+            application_date DATE NOT NULL,
+            status VARCHAR(50) DEFAULT 'applied',
+            salary_range VARCHAR(100),
+            job_type VARCHAR(50) DEFAULT 'full-time',
+            job_url TEXT,
+            notes TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    # User Sessions table - unified sessions for all user types
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS user_sessions (
+            id SERIAL PRIMARY KEY,
+            user_email VARCHAR(255) NOT NULL,
+            user_role VARCHAR(50) NOT NULL,
+            token VARCHAR(255) UNIQUE NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            expires_at TIMESTAMP
+        )
+    ''')
+    
     conn.commit()
     conn.close()
     print("✅ Database initialized successfully!")
@@ -445,6 +526,24 @@ def add_security_headers(response):
 def careers_page():
     """Serve careers page"""
     response = send_from_directory('.', 'careers.html')
+    return add_security_headers(response)
+
+@app.route('/user-login')
+def user_login_page():
+    """Serve user login page for interns and recruiters"""
+    response = send_from_directory('.', 'user-login.html')
+    return add_security_headers(response)
+
+@app.route('/intern-dashboard')
+def intern_dashboard_page():
+    """Serve intern dashboard page"""
+    response = send_from_directory('.', 'intern-dashboard-new.html')
+    return add_security_headers(response)
+
+@app.route('/recruiter-dashboard')
+def recruiter_dashboard_page():
+    """Serve recruiter dashboard page"""
+    response = send_from_directory('.', 'recruiter-dashboard.html')
     return add_security_headers(response)
 
 @app.route('/auth')
@@ -2395,6 +2494,573 @@ def download_export_file(filename):
         return send_file(filepath, as_attachment=True, download_name=filename)
     except Exception as e:
         print(f"❌ Error downloading export file: {e}")
+        return jsonify({'error': str(e)}), 500
+
+# ============================================================================
+# USER PORTAL API ENDPOINTS - Intern & Recruiter Dashboards
+# ============================================================================
+
+def verify_user_token(token, role=None):
+    """Verify user authentication token and optionally check role"""
+    if not token:
+        return None
+    
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        if role == 'intern':
+            cursor.execute('''
+                SELECT si.id, si.email, si.full_name
+                FROM intern_sessions ins
+                JOIN selected_interns si ON ins.intern_id = si.id
+                WHERE ins.token = %s AND si.status = 'active'
+            ''', (token,))
+        elif role == 'recruiter':
+            cursor.execute('''
+                SELECT r.id, r.email, r.full_name
+                FROM recruiter_sessions rs
+                JOIN recruiters r ON rs.recruiter_id = r.id
+                WHERE rs.token = %s AND r.status = 'active'
+            ''', (token,))
+        else:
+            cursor.execute('''
+                SELECT user_email, user_role
+                FROM user_sessions
+                WHERE token = %s
+            ''', (token,))
+        
+        result = cursor.fetchone()
+        conn.close()
+        
+        return result if result else None
+    except Exception as e:
+        print(f"❌ Error verifying token: {e}")
+        return None
+
+# User Login Endpoint
+@app.route('/api/user/login', methods=['POST'])
+def user_login():
+    """User login for interns and recruiters"""
+    try:
+        data = request.json
+        email = data.get('email')
+        password = data.get('password')
+        role = data.get('role')  # 'intern' or 'recruiter'
+        
+        if not email or not password or not role:
+            return jsonify({'message': 'Email, password, and role are required'}), 400
+        
+        password_hash = hash_password(password)
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        if role == 'intern':
+            cursor.execute('''
+                SELECT id, full_name, email
+                FROM selected_interns
+                WHERE email = %s AND password_hash = %s AND status = 'active'
+            ''', (email, password_hash))
+            
+            result = cursor.fetchone()
+            if result:
+                user_id, name, email = result
+                token = secrets.token_hex(32)
+                
+                # Create session
+                cursor.execute('''
+                    INSERT INTO intern_sessions (intern_id, token)
+                    VALUES (%s, %s)
+                ''', (user_id, token))
+                
+                conn.commit()
+                conn.close()
+                
+                return jsonify({
+                    'token': token,
+                    'role': 'intern',
+                    'name': name,
+                    'email': email
+                }), 200
+                
+        elif role == 'recruiter':
+            cursor.execute('''
+                SELECT id, full_name, email
+                FROM recruiters
+                WHERE email = %s AND password_hash = %s AND status = 'active'
+            ''', (email, password_hash))
+            
+            result = cursor.fetchone()
+            if result:
+                user_id, name, email = result
+                token = secrets.token_hex(32)
+                
+                # Create session
+                cursor.execute('''
+                    INSERT INTO recruiter_sessions (recruiter_id, token)
+                    VALUES (%s, %s)
+                ''', (user_id, token))
+                
+                conn.commit()
+                conn.close()
+                
+                return jsonify({
+                    'token': token,
+                    'role': 'recruiter',
+                    'name': name,
+                    'email': email
+                }), 200
+        
+        conn.close()
+        return jsonify({'message': 'Invalid credentials'}), 401
+        
+    except Exception as e:
+        print(f"❌ Login error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+# ============================================================================
+# INTERN DASHBOARD API ENDPOINTS
+# ============================================================================
+
+@app.route('/api/intern/tasks', methods=['GET', 'POST'])
+def intern_tasks():
+    """Get or create intern daily tasks"""
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+    user = verify_user_token(token, 'intern')
+    
+    if not user:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    intern_id = user[0]
+    
+    if request.method == 'GET':
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            
+            cursor.execute('''
+                SELECT id, title, description, priority, status, due_date, 
+                       completed_at, created_at
+                FROM intern_daily_tasks
+                WHERE intern_id = %s
+                ORDER BY created_at DESC
+            ''', (intern_id,))
+            
+            tasks = []
+            for row in cursor.fetchall():
+                tasks.append({
+                    'id': row[0],
+                    'title': row[1],
+                    'description': row[2],
+                    'priority': row[3],
+                    'status': row[4],
+                    'due_date': row[5].isoformat() if row[5] else None,
+                    'completed_at': row[6].isoformat() if row[6] else None,
+                    'created_at': row[7].isoformat() if row[7] else None
+                })
+            
+            conn.close()
+            return jsonify({'tasks': tasks}), 200
+            
+        except Exception as e:
+            print(f"❌ Error fetching tasks: {e}")
+            return jsonify({'error': str(e)}), 500
+    
+    elif request.method == 'POST':
+        try:
+            data = request.json
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            
+            cursor.execute('''
+                INSERT INTO intern_daily_tasks (intern_id, title, description, priority, due_date)
+                VALUES (%s, %s, %s, %s, %s)
+                RETURNING id
+            ''', (intern_id, data['title'], data.get('description'), 
+                  data.get('priority', 'medium'), data['due_date']))
+            
+            task_id = cursor.fetchone()[0]
+            conn.commit()
+            conn.close()
+            
+            return jsonify({'message': 'Task created', 'task_id': task_id}), 201
+            
+        except Exception as e:
+            print(f"❌ Error creating task: {e}")
+            return jsonify({'error': str(e)}), 500
+
+@app.route('/api/intern/tasks/<int:task_id>/complete', methods=['PUT'])
+def complete_task(task_id):
+    """Mark task as completed"""
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+    user = verify_user_token(token, 'intern')
+    
+    if not user:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            UPDATE intern_daily_tasks
+            SET status = 'completed', completed_at = CURRENT_TIMESTAMP
+            WHERE id = %s AND intern_id = %s
+        ''', (task_id, user[0]))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({'message': 'Task completed'}), 200
+        
+    except Exception as e:
+        print(f"❌ Error completing task: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/intern/tasks/<int:task_id>/submit', methods=['POST'])
+def submit_task(task_id):
+    """Submit task with notes"""
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+    user = verify_user_token(token, 'intern')
+    
+    if not user:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        data = request.json
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            INSERT INTO daily_task_submissions (task_id, intern_id, submission_notes, hours_spent)
+            VALUES (%s, %s, %s, %s)
+        ''', (task_id, user[0], data['notes'], data['hours_spent']))
+        
+        cursor.execute('''
+            UPDATE intern_daily_tasks
+            SET status = 'completed', completed_at = CURRENT_TIMESTAMP
+            WHERE id = %s
+        ''', (task_id,))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({'message': 'Task submitted'}), 200
+        
+    except Exception as e:
+        print(f"❌ Error submitting task: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/intern/application-status', methods=['GET'])
+def intern_application_status():
+    """Get intern's application status"""
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+    user = verify_user_token(token, 'intern')
+    
+    if not user:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            SELECT si.position, si.college, a.status, a.applied_at
+            FROM selected_interns si
+            LEFT JOIN applications a ON si.application_id = a.id
+            WHERE si.id = %s
+        ''', (user[0],))
+        
+        result = cursor.fetchone()
+        conn.close()
+        
+        if result:
+            return jsonify({
+                'position': result[0],
+                'college': result[1],
+                'status': result[2] or 'selected',
+                'applied_at': result[3].isoformat() if result[3] else None
+            }), 200
+        else:
+            return jsonify({}), 200
+            
+    except Exception as e:
+        print(f"❌ Error fetching application: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/intern/stats', methods=['GET'])
+def intern_stats():
+    """Get intern dashboard statistics"""
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+    user = verify_user_token(token, 'intern')
+    
+    if not user:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Total tasks
+        cursor.execute('SELECT COUNT(*) FROM intern_daily_tasks WHERE intern_id = %s', (user[0],))
+        total_tasks = cursor.fetchone()[0]
+        
+        # Completed tasks
+        cursor.execute('SELECT COUNT(*) FROM intern_daily_tasks WHERE intern_id = %s AND status = %s', (user[0], 'completed'))
+        completed_tasks = cursor.fetchone()[0]
+        
+        # Pending tasks
+        cursor.execute('SELECT COUNT(*) FROM intern_daily_tasks WHERE intern_id = %s AND status = %s', (user[0], 'pending'))
+        pending_tasks = cursor.fetchone()[0]
+        
+        # Completion rate
+        completion_rate = f"{int((completed_tasks / total_tasks * 100) if total_tasks > 0 else 0)}%"
+        
+        # Weekly progress (last 7 days)
+        cursor.execute('''
+            SELECT COUNT(*) FROM intern_daily_tasks 
+            WHERE intern_id = %s AND status = 'completed' 
+            AND completed_at >= CURRENT_DATE - INTERVAL '7 days'
+        ''', (user[0],))
+        weekly_completed = cursor.fetchone()[0]
+        
+        cursor.execute('''
+            SELECT COUNT(*) FROM intern_daily_tasks 
+            WHERE intern_id = %s AND due_date >= CURRENT_DATE - INTERVAL '7 days'
+        ''', (user[0],))
+        weekly_total = cursor.fetchone()[0]
+        
+        weekly_progress = int((weekly_completed / weekly_total * 100) if weekly_total > 0 else 0)
+        
+        conn.close()
+        
+        return jsonify({
+            'total_tasks': total_tasks,
+            'completed_tasks': completed_tasks,
+            'pending_tasks': pending_tasks,
+            'in_progress_tasks': 0,
+            'completion_rate': completion_rate,
+            'weekly_progress': weekly_progress
+        }), 200
+        
+    except Exception as e:
+        print(f"❌ Error fetching stats: {e}")
+        return jsonify({'error': str(e)}), 500
+
+# ============================================================================
+# RECRUITER DASHBOARD API ENDPOINTS
+# ============================================================================
+
+@app.route('/api/recruiter/applications', methods=['GET', 'POST'])
+def recruiter_applications():
+    """Get or create recruiter job applications"""
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+    user = verify_user_token(token, 'recruiter')
+    
+    if not user:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    recruiter_id = user[0]
+    
+    if request.method == 'GET':
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            
+            cursor.execute('''
+                SELECT id, company_name, position, location, application_date, status,
+                       salary_range, job_type, job_url, notes, created_at
+                FROM recruiter_applications
+                WHERE recruiter_id = %s
+                ORDER BY application_date DESC
+            ''', (recruiter_id,))
+            
+            applications = []
+            for row in cursor.fetchall():
+                applications.append({
+                    'id': row[0],
+                    'company_name': row[1],
+                    'position': row[2],
+                    'location': row[3],
+                    'application_date': row[4].isoformat() if row[4] else None,
+                    'status': row[5],
+                    'salary_range': row[6],
+                    'job_type': row[7],
+                    'job_url': row[8],
+                    'notes': row[9],
+                    'created_at': row[10].isoformat() if row[10] else None
+                })
+            
+            conn.close()
+            return jsonify({'applications': applications}), 200
+            
+        except Exception as e:
+            print(f"❌ Error fetching applications: {e}")
+            return jsonify({'error': str(e)}), 500
+    
+    elif request.method == 'POST':
+        try:
+            data = request.json
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            
+            cursor.execute('''
+                INSERT INTO recruiter_applications 
+                (recruiter_id, company_name, position, location, application_date, status,
+                 salary_range, job_type, job_url, notes)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                RETURNING id
+            ''', (recruiter_id, data['company_name'], data['position'], 
+                  data.get('location'), data['application_date'], data['status'],
+                  data.get('salary_range'), data.get('job_type', 'full-time'),
+                  data.get('job_url'), data.get('notes')))
+            
+            app_id = cursor.fetchone()[0]
+            conn.commit()
+            conn.close()
+            
+            return jsonify({'message': 'Application created', 'application_id': app_id}), 201
+            
+        except Exception as e:
+            print(f"❌ Error creating application: {e}")
+            return jsonify({'error': str(e)}), 500
+
+@app.route('/api/recruiter/applications/<int:app_id>', methods=['GET', 'PUT', 'DELETE'])
+def recruiter_application_detail(app_id):
+    """Get, update, or delete specific recruiter application"""
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+    user = verify_user_token(token, 'recruiter')
+    
+    if not user:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    recruiter_id = user[0]
+    
+    if request.method == 'GET':
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            
+            cursor.execute('''
+                SELECT id, company_name, position, location, application_date, status,
+                       salary_range, job_type, job_url, notes
+                FROM recruiter_applications
+                WHERE id = %s AND recruiter_id = %s
+            ''', (app_id, recruiter_id))
+            
+            row = cursor.fetchone()
+            conn.close()
+            
+            if row:
+                return jsonify({
+                    'id': row[0],
+                    'company_name': row[1],
+                    'position': row[2],
+                    'location': row[3],
+                    'application_date': row[4].isoformat() if row[4] else None,
+                    'status': row[5],
+                    'salary_range': row[6],
+                    'job_type': row[7],
+                    'job_url': row[8],
+                    'notes': row[9]
+                }), 200
+            else:
+                return jsonify({'error': 'Application not found'}), 404
+                
+        except Exception as e:
+            print(f"❌ Error fetching application: {e}")
+            return jsonify({'error': str(e)}), 500
+    
+    elif request.method == 'PUT':
+        try:
+            data = request.json
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            
+            cursor.execute('''
+                UPDATE recruiter_applications
+                SET company_name = %s, position = %s, location = %s, 
+                    application_date = %s, status = %s, salary_range = %s,
+                    job_type = %s, job_url = %s, notes = %s, updated_at = CURRENT_TIMESTAMP
+                WHERE id = %s AND recruiter_id = %s
+            ''', (data['company_name'], data['position'], data.get('location'),
+                  data['application_date'], data['status'], data.get('salary_range'),
+                  data.get('job_type'), data.get('job_url'), data.get('notes'),
+                  app_id, recruiter_id))
+            
+            conn.commit()
+            conn.close()
+            
+            return jsonify({'message': 'Application updated'}), 200
+            
+        except Exception as e:
+            print(f"❌ Error updating application: {e}")
+            return jsonify({'error': str(e)}), 500
+    
+    elif request.method == 'DELETE':
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            
+            cursor.execute('''
+                DELETE FROM recruiter_applications
+                WHERE id = %s AND recruiter_id = %s
+            ''', (app_id, recruiter_id))
+            
+            conn.commit()
+            conn.close()
+            
+            return jsonify({'message': 'Application deleted'}), 200
+            
+        except Exception as e:
+            print(f"❌ Error deleting application: {e}")
+            return jsonify({'error': str(e)}), 500
+
+@app.route('/api/recruiter/stats', methods=['GET'])
+def recruiter_stats():
+    """Get recruiter dashboard statistics"""
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+    user = verify_user_token(token, 'recruiter')
+    
+    if not user:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Total applications
+        cursor.execute('SELECT COUNT(*) FROM recruiter_applications WHERE recruiter_id = %s', (user[0],))
+        total = cursor.fetchone()[0]
+        
+        # Offers
+        cursor.execute('SELECT COUNT(*) FROM recruiter_applications WHERE recruiter_id = %s AND status = %s', (user[0], 'offer'))
+        offers = cursor.fetchone()[0]
+        
+        # Interviewing
+        cursor.execute('SELECT COUNT(*) FROM recruiter_applications WHERE recruiter_id = %s AND status = %s', (user[0], 'interviewing'))
+        interviewing = cursor.fetchone()[0]
+        
+        # This week
+        cursor.execute('''
+            SELECT COUNT(*) FROM recruiter_applications 
+            WHERE recruiter_id = %s AND application_date >= CURRENT_DATE - INTERVAL '7 days'
+        ''', (user[0],))
+        this_week = cursor.fetchone()[0]
+        
+        conn.close()
+        
+        return jsonify({
+            'total': total,
+            'offers': offers,
+            'interviewing': interviewing,
+            'this_week': this_week
+        }), 200
+        
+    except Exception as e:
+        print(f"❌ Error fetching stats: {e}")
         return jsonify({'error': str(e)}), 500
 
 # ============================================================================
